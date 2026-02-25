@@ -1,0 +1,124 @@
+<!-- templates/admin/register.html -->
+{% extends "admin/base.html" %}
+
+{% block title %}Register New Admin{% endblock %}
+{% block page_title %}Register New Admin{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-user-plus"></i> Create New Admin</h4>
+            </div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if 'success' in message %}success{% elif 'danger' in message or 'error' in message %}danger{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- --- Use WTForm for Registration --- -->
+                <form method="POST">
+                    <!-- Render the CSRF token field provided by Flask-WTF -->
+                    {{ form.csrf_token }}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.username.id }}" class="form-label">{{ form.username.label.text }} *</label>
+                            {{ form.username(class="form-control") }}
+                            {% if form.username.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.username.errors %}
+                                        <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.email.id }}" class="form-label">{{ form.email.label.text }} *</label>
+                            {{ form.email(class="form-control") }}
+                            {% if form.email.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.email.errors %}
+                                        <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.password.id }}" class="form-label">{{ form.password.label.text }} *</label>
+                            {{ form.password(class="form-control") }}
+                            {% if form.password.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.password.errors %}
+                                        <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.confirm_password.id }}" class="form-label">{{ form.confirm_password.label.text }} *</label>
+                            {{ form.confirm_password(class="form-control") }}
+                            {% if form.confirm_password.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.confirm_password.errors %}
+                                        <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.access_level.id }}" class="form-label">{{ form.access_level.label.text }} *</label>
+                            {{ form.access_level(class="form-select") }}
+                            {% if form.access_level.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.access_level.errors %}
+                                        <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.is_active.id }}" class="form-label">{{ form.is_active.label.text }}</label>
+                            <div class="form-check mt-2">
+                                {{ form.is_active(class="form-check-input") }}
+                                <label class="form-check-label" for="{{ form.is_active.id }}">
+                                    {{ form.is_active.label.text }}
+                                </label>
+                            </div>
+                            {% if form.is_active.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.is_active.errors %}
+                                        <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('admin.list_admins') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-user-plus"></i> {{ form.submit.label.text }}
+                        </button>
+                    </div>
+                </form>
+                <!-- --- End Use WTForm --- -->
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

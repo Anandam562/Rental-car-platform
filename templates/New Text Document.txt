@@ -1,0 +1,28 @@
+@echo off
+REM Create the base user templates directory
+mkdir user
+
+REM Create the HTML files in the main user template folder
+cd user
+echo.> base.html
+echo.> dashboard.html
+
+REM Create the bookings subdirectory and files
+mkdir bookings
+cd bookings
+echo.> list.html
+echo.> detail.html
+echo.> payment.html
+
+REM Go back to user directory
+cd ..
+
+REM Create the notifications subdirectory and files
+mkdir notifications
+cd notifications
+echo.> list.html
+
+REM Go back to root
+cd ..
+
+echo User template directory structure created successfully.

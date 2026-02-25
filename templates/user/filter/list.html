@@ -1,0 +1,150 @@
+<!-- templates/user/filter/list.html -->
+{% extends "user/base.html" %} <!-- Or your main base template -->
+
+{% block title %}Available Cars - ZoomCar Clone{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <!-- Header/Toolbar -->
+    <div class="bg-white border rounded-2xl p-3 shadow-sm mb-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <div class="text-sm text-gray-600">
+                    <!-- You can dynamically show the count or filters applied -->
+                    {{ cars|length }} cars found
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <!-- Simple Sort Dropdown (Tailwind CSS only, no JS) -->
+                <div class="sort-dropdown relative">
+                    <button class="inline-flex items-center gap-2 border rounded-xl px-3 py-2 text-sm">
+                        <i class="fas fa-sort-amount-down"></i> Sort
+                        <i class="fas fa-chevron-down ml-1"></i>
+                    </button>
+                    <div class="sort-dropdown-content absolute right-0 top-full mt-1 w-48 bg-white border rounded-xl shadow-lg py-1 hidden z-10">
+                        <!-- These links need to be updated to match your actual sorting/filtering URLs -->
+                        <a href="?sort=distance" class="block px-4 py-2 text-sm hover:bg-gray-100">Distance</a>
+                        <a href="?sort=price_low_high" class="block px-4 py-2 text-sm hover:bg-gray-100">Price: Low to High</a>
+                        <a href="?sort=price_high_low" class="block px-4 py-2 text-sm hover:bg-gray-100">Price: High to Low</a>
+                        <a href="?sort=rating" class="block px-4 py-2 text-sm hover:bg-gray-100">Rating</a>
+                        <!-- Add more sort options -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Car Listings Grid -->
+    <div class="car-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% if cars %}
+            {% for car in cars %}
+            <div class="car-card bg-white border rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md">
+                <!-- Car Image -->
+                <div class="relative h-48 w-full overflow-hidden">
+                    {% if car.images and car.images[0] %}
+                        <img src="{{ url_for('static', filename='uploads/' + car.images[0].filename) }}"
+                             alt="{{ car.make }} {{ car.model }}"
+                             class="w-full h-full object-cover car-image transition-transform duration-500">
+                    {% else %}
+                        <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-full flex items-center justify-center">
+                            <i class="fas fa-car text-gray-400 text-4xl"></i>
+                        </div>
+                    {% endif %}
+                    {% if loop.index == 1 %}
+                    <div class="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300">
+                        Top Pick
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="p-4">
+                    <!-- Car Title & Details -->
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                            <h3 class="font-bold text-gray-800 leading-tight">{{ car.make }} {{ car.model }}</h3>
+                            <p class="text-xs text-gray-500 mt-1">{{ car.year }} • {{ car.transmission }} • {{ car.fuel_type }}</p>
+                        </div>
+                        <!-- Rating (Placeholder) -->
+                        <div class="flex items-center gap-1 text-sm">
+                            <i class="fas fa-star text-yellow-400"></i>
+                            <span class="font-semibold">4.5</span>
+                            <!-- <span class="text-gray-500">(128)</span> -->
+                        </div>
+                    </div>
+
+                    <!-- Location & Pricing -->
+                    <div class="flex items-center justify-between text-sm mb-3">
+                        <div class="text-gray-600">
+                            <i class="fas fa-map-marker-alt text-primary mr-1"></i>
+                            {% if car.locality %}{{ car.locality }}, {% endif %}
+                            {{ car.city }}
+                        </div>
+                        <div class="text-right">
+                            <div class="text-lg font-bold text-gray-900">₹{{ "%.0f"|format(car.price_per_day) }}</div>
+                            <div class="text-xs text-gray-500">/ day</div>
+                            {% if car.display_distance_km is defined %}
+                            <div class="text-xs text-gray-500">{{ car.display_distance_km }} km away</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex items-center gap-2">
+                        <a href="{{ url_for('car.car_detail', car_id=car.id) }}" class="flex-1 text-center text-sm font-medium bg-primary text-white rounded-xl px-3 py-2 transition-all hover:bg-blue-600">
+                            <i class="fas fa-info-circle"></i> View Details
+                        </a>
+                        <button class="text-sm px-3 py-2 rounded-xl border text-gray-700 hover:bg-gray-50">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-span-full text-center py-10">
+                <i class="fas fa-car fa-3x text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">No cars found</h3>
+                <p class="text-gray-500 mb-4">Try adjusting your filters or search criteria.</p>
+                <a href="{{ url_for('car.home') }}" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-search mr-2"></i> Search Again
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination (Placeholder) -->
+    <!--
+    <div class="pagination flex justify-center mt-6 gap-2">
+        <button class="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-100">1</button>
+        <button class="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-100">2</button>
+        <button class="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-100">3</button>
+        <button class="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-100"><i class="fas fa-chevron-right"></i></button>
+    </div>
+    -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Simple Sort Dropdown Toggle (Basic Tailwind, no complex JS) ---
+    const sortDropdownButton = document.querySelector('.sort-dropdown button');
+    const sortDropdownContent = document.querySelector('.sort-dropdown-content');
+
+    if (sortDropdownButton && sortDropdownContent) {
+        sortDropdownButton.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent event bubbling
+            sortDropdownContent.classList.toggle('hidden');
+        });
+
+        // Close dropdown if clicked outside
+        document.addEventListener('click', function(e) {
+            if (!sortDropdownButton.contains(e.target) && !sortDropdownContent.contains(e.target)) {
+                sortDropdownContent.classList.add('hidden');
+            }
+        });
+    }
+    // --- End Sort Dropdown ---
+});
+</script>
+{% endblock %}

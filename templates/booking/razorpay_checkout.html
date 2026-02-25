@@ -1,0 +1,177 @@
+<!-- templates/booking/razorpay_checkout.html -->
+{% extends "base.html" %}
+{% block title %}Complete Payment for Booking #{{ booking.id }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white border rounded-2xl shadow-sm overflow-hidden">
+        <div class="bg-primary text-white p-5">
+            <h1 class="text-2xl font-bold"><i class="fas fa-credit-card mr-2"></i>Secure Payment</h1>
+            <p class="text-blue-100">Complete your booking for {{ booking.car.make }} {{ booking.car.model }}</p>
+        </div>
+        <div class="p-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="border rounded-xl p-4">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <i class="fas fa-car text-primary"></i> Car Details
+                    </h3>
+                    <p class="font-medium">{{ booking.car.make }} {{ booking.car.model }} ({{ booking.car.year }})</p>
+                    <p class="text-sm text-gray-600">{{ booking.car.transmission }} â€¢ {{ booking.car.fuel_type }}</p>
+                </div>
+                <div class="border rounded-xl p-4">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <i class="fas fa-calendar-alt text-primary"></i> Rental Period
+                    </h3>
+                    <p class="text-sm"><strong>{{ booking.start_date.strftime('%Y-%m-%d') }}</strong> to <strong>{{ booking.end_date.strftime('%Y-%m-%d') }}</strong></p>
+                    <p class="text-sm text-gray-600">{{ booking.duration_days }} days</p>
+                </div>
+            </div>
+            <div class="border rounded-xl p-4 mb-6 bg-blue-50">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-medium">Total Amount:</span>
+                    <span class="text-xl font-bold text-primary">â‚¹{{ "%.2f"|format(total_amount_rupees) }}</span>
+                </div>
+                <p class="text-xs text-gray-600">This amount will be charged to your payment method.</p>
+            </div>
+            <div class="border rounded-xl p-4 mb-6">
+                <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <i class="fas fa-shield-alt text-primary"></i> Payment Method
+                </h3>
+                <div class="text-center py-4">
+                    <i class="fas fa-lock text-2xl text-green-500 mb-2"></i>
+                    <p class="text-sm text-gray-600 mb-3">Powered by <strong>Razorpay</strong>. Your payment is secured with 128-bit SSL encryption.</p>
+                    <button id="rzp-button1" class="bg-primary text-white rounded-xl px-6 py-3 font-medium hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-rupee-sign mr-1"></i> Pay â‚¹{{ "%.2f"|format(total_amount_rupees) }}
+                    </button>
+                </div>
+            </div>
+            <div class="text-center text-xs text-gray-500">
+                <p>By proceeding, you agree to our <a href="#" class="text-primary hover:underline">Terms of Service</a> and <a href="#" class="text-primary hover:underline">Privacy Policy</a>.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Razorpay Checkout Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<!-- templates/booking/razorpay_checkout.html (Relevant part - Razorpay handler script) -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Razorpay Configuration ---
+    const razorpayKeyId = "{{ razorpay_key_id }}";
+    const razorpayOrderId = "{{ razorpay_order_id }}";
+    const totalAmountPaise = {{ total_amount_paise }};
+    const totalAmountRupees = {{ total_amount_rupees }};
+    const bookingId = {{ booking.id }};
+    const carMakeModel = "{{ booking.car.make }} {{ booking.car.model }}";
+
+    if (!razorpayKeyId || !razorpayOrderId || !totalAmountPaise) {
+        console.error("Razorpay configuration missing.");
+        alert("Payment configuration error. Please try again.");
+        window.location.href = "{{ url_for('booking.booking_detail', booking_id=booking.id) }}";
+        return;
+    }
+    // --- End Configuration ---
+
+    // --- Razorpay Options ---
+    const options = {
+        "key": razorpayKeyId,
+        "amount": totalAmountPaise,
+        "currency": "INR",
+        "name": "ZoomCar Clone",
+        "description": `Booking for ${carMakeModel} (#${bookingId})`,
+        // "image": "https://example.com/your_logo.png", // Add your logo URL if available
+        "order_id": razorpayOrderId,
+        "handler": function (response){
+            // This function executes after payment is successful in the Razorpay popup
+            console.log("Razorpay Payment Response:", response);
+
+            // --- CRITICAL FIX: Prepare payment data for backend verification ---
+            // BEFORE (Incorrect - Sent raw response object)
+            // const paymentData = response;
+
+            // AFTER (Corrected - Extract specific fields and include CSRF token)
+            const paymentData = {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature
+                // csrf_token: '{{ csrf_token() }}' // <-- DO NOT include CSRF token in JSON body
+            };
+            // --- END CRITICAL FIX ---
+
+            // --- CRITICAL FIX 2: Submit payment data with CSRF token in headers ---
+            // BEFORE (Incorrect - No CSRF token sent)
+            // fetch('{{ url_for("booking.handle_payment") }}', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         // Missing 'X-CSRFToken': ...
+            //     },
+            //     body: JSON.stringify(paymentData)
+            // })
+
+            // AFTER (Corrected - Include CSRF token in headers)
+            fetch('{{ url_for("booking.handle_payment") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // --- Include CSRF token in the header ---
+                    // Flask-WTF looks for 'X-CSRFToken' by default
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                    // --- End Include CSRF token ---
+                },
+                body: JSON.stringify(paymentData) // Send only payment details in body
+            })
+            // --- END CRITICAL FIX 2 ---
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Redirect to booking detail page on successful verification
+                    // Use URL from backend response
+                    window.location.href = data.redirect_url;
+                } else {
+                    // Handle verification failure
+                    alert(data.message || "Payment verification failed. Please contact support.");
+                    window.location.href = "{{ url_for('booking.booking_detail', booking_id=booking.id) }}";
+                }
+            })
+            .catch(error => {
+                console.error('Payment verification error:', error);
+                alert("An error occurred during payment verification. Please check your booking status.");
+                window.location.href = "{{ url_for('booking.booking_detail', booking_id=booking.id) }}";
+            });
+        },
+        "prefill": {
+            "name": "{{ current_user.username }}",
+            "email": "{{ current_user.email }}",
+            // "contact": "{{ current_user.phone }}" // Prefill user's contact number if available
+        },
+        "notes": {
+            "booking_id": bookingId,
+            "car": carMakeModel
+        },
+        "theme": {
+            "color": "#00b4d8" // Primary color from your theme
+        },
+        "modal": {
+            "ondismiss": function(){
+                // Handle case where user closes the Razorpay popup without paying
+                console.log("Razorpay Popup closed by user.");
+                alert("Payment was not completed. You can resume payment from the booking details page.");
+                window.location.href = "{{ url_for('booking.booking_detail', booking_id=booking.id) }}";
+            }
+        }
+    };
+    // --- End Options ---
+
+    // --- Initialize and Open Razorpay Checkout ---
+    const rzp1 = new Razorpay(options);
+    rzp1.open();
+    // --- End Initialization ---
+});
+</script>
+{% endblock %}

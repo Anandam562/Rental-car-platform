@@ -1,0 +1,128 @@
+<!-- templates/host/cars/add.html -->
+{% extends "host/base.html" %}
+
+{% block title %}Add Car{% endblock %}
+{% block page_title %}Add New Car{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="addCarForm">
+                    <!-- Add the CSRF token field provided by Flask-WTF -->
+                    {{ form.csrf_token }} <!-- This renders the hidden input -->
+                    <!-- END CRITICAL FIX -->
+                    <!-- Car Details Section -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="make" class="form-label">Make *</label>
+                            <input type="text" class="form-control" id="make" name="make" value="{{ request.form.get('make', '') }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="model" class="form-label">Model *</label>
+                            <input type="text" class="form-control" id="model" name="model" value="{{ request.form.get('model', '') }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="year" class="form-label">Year *</label>
+                            <input type="number" class="form-control" id="year" name="year" min="1900" max="2030" value="{{ request.form.get('year', '') }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="price_per_hour" class="form-label">Price per hour (₹) *</label>
+                            <input type="number" class="form-control" id="price_per_hour" name="price_per_hour" step="0.01" min="0" value="{{ request.form.get('price_per_hour', '') }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="color" class="form-label">Color</label>
+                            <input type="text" class="form-control" id="color" name="color" value="{{ request.form.get('color', '') }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="mileage" class="form-label">Mileage (km)</label>
+                            <input type="number" class="form-control" id="mileage" name="mileage" min="0" value="{{ request.form.get('mileage', '') }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="fuel_type" class="form-label">Fuel Type *</label>
+                            <select class="form-select" id="fuel_type" name="fuel_type" required>
+                                <option value="">Select Fuel Type</option>
+                                <option value="Petrol" {% if request.form.get('fuel_type') == 'Petrol' %}selected{% endif %}>Petrol</option>
+                                <option value="Diesel" {% if request.form.get('fuel_type') == 'Diesel' %}selected{% endif %}>Diesel</option>
+                                <option value="Electric" {% if request.form.get('fuel_type') == 'Electric' %}selected{% endif %}>Electric</option>
+                                <option value="CNG" {% if request.form.get('fuel_type') == 'CNG' %}selected{% endif %}>CNG</option>
+                                <option value="Hybrid" {% if request.form.get('fuel_type') == 'Hybrid' %}selected{% endif %}>Hybrid</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="transmission" class="form-label">Transmission *</label>
+                            <select class="form-select" id="transmission" name="transmission" required>
+                                <option value="">Select Transmission</option>
+                                <option value="Manual" {% if request.form.get('transmission') == 'Manual' %}selected{% endif %}>Manual</option>
+                                <option value="Automatic" {% if request.form.get('transmission') == 'Automatic' %}selected{% endif %}>Automatic</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="seats" class="form-label">Seats *</label>
+                            <input type="number" class="form-control" id="seats" name="seats" min="1" max="20" value="{{ request.form.get('seats', '') }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="is_available" class="form-label">Availability</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="is_available" name="is_available" {% if request.form.get('is_available', 'on') == 'on' %}checked{% endif %}>
+                                <label class="form-check-label" for="is_available">
+                                    Available for booking
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3"></div> <!-- Spacer -->
+                    </div>
+                    <!-- End Car Details Section -->
+
+                    <!-- NEW LOCATION DETAILS SECTION -->
+                    {% include 'host/cars/partials/location_input_section.html' %}
+                    <!-- END NEW LOCATION DETAILS SECTION -->
+
+                    <div class="mb-3">
+                        <label for="images" class="form-label">Car Images</label>
+                        <input type="file" class="form-control" id="images" name="images" multiple accept="image/*">
+                        <div class="form-text">You can select multiple images. First image will be primary.</div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('host.list_cars') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Add Car</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Tips</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Add clear photos from multiple angles</li>
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Set competitive pricing</li>
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Provide accurate specifications</li>
+                    <li class="mb-2"><i class="fas fa-check text-success"></i> Enter a precise location for better discoverability</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- Include the shared location input JavaScript -->
+{% include 'host/cars/partials/location_input_js.html' %}
+{% endblock %}

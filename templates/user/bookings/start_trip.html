@@ -1,0 +1,81 @@
+<!-- templates/user/bookings/start_trip.html -->
+{% extends "user/base.html" %}
+
+{% block title %}Start Trip - Booking #{{ booking.id }}{% endblock %}
+{% block page_title %}Start Your Trip{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-play-circle"></i> Upload Pickup Photos</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Please upload photos of the car before starting your trip.</p>
+
+                <div class="mb-4">
+                    <h5>Trip Details</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Booking ID:</strong> #{{ booking.id }}</li>
+                        <li class="list-group-item"><strong>Car:</strong> {{ booking.car.make }} {{ booking.car.model }} ({{ booking.car.year }})</li>
+                        <li class="list-group-item"><strong>Start Date & Time:</strong> {{ booking.start_date.strftime('%Y-%m-%d %H:%M') }} IST</li>
+                        <li class="list-group-item"><strong>End Date & Time:</strong> {{ booking.end_date.strftime('%Y-%m-%d %H:%M') }} IST</li>
+                        <li class="list-group-item"><strong>Total Price:</strong> ₹{{ "%.2f"|format(booking.total_price) }}</li>
+                        <li class="list-group-item"><strong>Status:</strong>
+                            <span class="badge bg-{% if booking.status == 'completed' %}success
+                                                {% elif booking.status == 'active' %}info
+                                                {% elif booking.status == 'paid' %}primary
+                                                {% elif booking.status == 'approved' %}secondary
+                                                {% elif booking.status == 'pending' %}warning
+                                                {% elif booking.status == 'cancelled' %}danger
+                                                {% else %}light{% endif %}">
+                                {{ booking.status|title }}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Photo Upload Form -->
+                <!-- CRITICAL FIX: Use WTForm in Template -->
+                <form method="POST" enctype="multipart/form-data">
+                    <!-- Render the CSRF token field provided by WTForms -->
+                    {{ form.hidden_tag() }} <!-- This renders the hidden CSRF input and any other hidden fields -->
+
+                    <!-- Pickup Photos Field -->
+                    <div class="mb-3">
+                        <!-- Label -->
+                        <label for="{{ form.pickup_photos.id }}" class="form-label">
+                            {{ form.pickup_photos.label.text }} (Max 10)
+                        </label>
+
+                        <!-- File Input (Rendered by WTForms) -->
+                        <!-- WTForms will apply classes, attributes (like multiple, accept) defined in the form class -->
+                        {{ form.pickup_photos(class="form-control") }}
+
+                        <!-- Help Text -->
+                        <div class="form-text">Select up to 10 images showing the car's condition at pickup.</div>
+
+                        <!-- Display Form Errors for the File Field -->
+                        {% if form.pickup_photos.errors %}
+                            <div class="text-danger">
+                                {% for error in form.pickup_photos.errors %}
+                                    <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <!-- End Pickup Photos Field -->
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('user.booking_detail', booking_id=booking.id) }}" class="btn btn-secondary">Cancel</a>
+                        <!-- Submit Button (Rendered by WTForms) -->
+                        {{ form.submit(class="btn btn-success") }}
+                    </div>
+                </form>
+                <!-- END CRITICAL FIX: Use WTForm in Template -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

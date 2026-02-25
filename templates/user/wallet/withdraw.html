@@ -1,0 +1,41 @@
+<!-- templates/user/wallet/withdraw.html -->
+{% extends "user/base.html" %}
+
+{% block title %}Withdraw Funds{% endblock %}
+{% block page_title %}Withdraw Funds{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="fas fa-minus-circle"></i> Withdraw Money from Wallet</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Enter the amount you wish to withdraw from your wallet.</p>
+                <p class="text-muted"><strong>Current Balance:</strong> ₹{{ "%.2f"|format(current_user.wallet_balance) }}</p>
+
+                <form method="POST">
+                    <!-- CSRF Token -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount (₹)</label>
+                        <input type="number" step="0.01" min="0.01" max="{{ current_user.wallet_balance }}" class="form-control" id="amount" name="amount" placeholder="Enter amount" required>
+                        <div class="form-text">Available balance: ₹{{ "%.2f"|format(current_user.wallet_balance) }}. Minimum withdrawal amount is ₹0.01.</div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-paper-plane"></i> Request Withdrawal
+                        </button>
+                        <a href="{{ url_for('user.wallet') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

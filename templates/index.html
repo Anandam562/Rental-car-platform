@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="add-car-form">
+    <h2>🚗 Add New Car</h2>
+    <form method="POST" action="{{ url_for('add_car') }}" enctype="multipart/form-data" id="carForm">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="make">Make *</label>
+                <input type="text" id="make" name="make" placeholder="Toyota, Honda, etc." required>
+            </div>
+
+            <div class="form-group">
+                <label for="model">Model *</label>
+                <input type="text" id="model" name="model" placeholder="Camry, Civic, etc." required>
+            </div>
+
+            <div class="form-group">
+                <label for="year">Year *</label>
+                <input type="number" id="year" name="year" placeholder="2023" min="1900" max="2030" required>
+            </div>
+
+            <div class="form-group">
+                <label for="price">Price ($) *</label>
+                <input type="number" id="price" name="price" placeholder="25000" step="0.01" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="color">Color</label>
+                <input type="text" id="color" name="color" placeholder="Red, Blue, etc.">
+            </div>
+
+            <div class="form-group">
+                <label for="mileage">Mileage</label>
+                <input type="number" id="mileage" name="mileage" placeholder="15000" min="0">
+            </div>
+        </div>
+
+        <div class="file-upload" id="fileUploadArea">
+            <i>📁</i>
+            <p>Click to upload images or drag & drop</p>
+            <p style="font-size: 0.9rem; color: #666;">Supports JPG, PNG, GIF (Multiple files allowed)</p>
+            <input type="file" name="images" accept="image/*" multiple style="display: none;" id="fileInput">
+        </div>
+
+        <div id="image-preview"></div>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn btn-primary">
+                <span>➕</span> Add Car
+            </button>
+            <button type="reset" class="btn btn-secondary">
+                <span>🔄</span> Reset
+            </button>
+        </div>
+    </form>
+</div>
+
+{% if cars %}
+<div class="car-list">
+    {% for car in cars %}
+    <div class="car-card">
+        <div class="car-images">
+            {% if car.images %}
+                <img src="{{ url_for('uploaded_file', filename=car.images[0].filename) }}"
+                     alt="{{ car.make }} {{ car.model }}" class="car-image-main">
+                {% if car.images|length > 1 %}
+                    <div class="image-counter">{{ car.images|length }} images</div>
+                {% endif %}
+            {% else %}
+                <div class="no-image-placeholder">
+                    <div>📷 No Image</div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="car-info">
+            <h3>{{ car.make }} {{ car.model }}</h3>
+            <div class="price-tag">${{ "%.2f"|format(car.price) }}</div>
+
+            <div class="car-details">
+                <div class="detail-item">
+                    <span class="detail-label">Year:</span>
+                    <span class="detail-value">{{ car.year }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Color:</span>
+                    <span class="detail-value">{{ car.color or 'N/A' }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Mileage:</span>
+                    <span class="detail-value">{{ car.mileage or 'N/A' }} miles</span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <a href="{{ url_for('edit_car_form', id=car.id) }}" class="btn btn-warning">
+                    <span>✏️</span> Edit
+                </a>
+                <a href="{{ url_for('delete_car', id=car.id) }}" class="btn btn-danger"
+                   onclick="return confirm('Are you sure you want to delete this car and all its images?')">
+                    <span>🗑️</span> Delete
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <i>🚗</i>
+    <h3>No Cars in Inventory</h3>
+    <p>Start by adding your first car to the inventory!</p>
+</div>
+{% endif %}
+
+<script>
+// Enhanced image upload with drag & drop
+document.addEventListener('DOMContentLoaded', function() {
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('image-preview');
+
+    // Click to upload
+    fileUploadArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // Drag and drop functionality
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        fileUploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        fileUploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        fileUploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+        fileUploadArea.style.borderColor = '#3498db';
+        fileUploadArea.style.backgroundColor = '#e3f2fd';
+    }
+
+    function unhighlight() {
+        fileUploadArea.style.borderColor = '#ddd';
+        fileUploadArea.style.backgroundColor = '#f8f9fa';
+    }
+
+    // Handle dropped files
+    fileUploadArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }
+
+    // Handle selected files
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            preview.innerHTML = '<h4>Selected Images:</h4>';
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const container = document.createElement('div');
+                        container.className = 'preview-image-container';
+                        container.innerHTML = `
+                            <img src="${e.target.result}" class="preview-image">
+                            <span class="remove-preview" onclick="this.parentElement.remove()">×</span>
+                        `;
+                        preview.appendChild(container);
+                    }
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

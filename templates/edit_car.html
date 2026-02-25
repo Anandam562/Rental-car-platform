@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="edit-car-form">
+    <h2>✏️ Edit Car</h2>
+    <form method="POST" action="{{ url_for('update_car', id=car.id) }}" enctype="multipart/form-data">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="make">Make *</label>
+                <input type="text" id="make" name="make" value="{{ car.make }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="model">Model *</label>
+                <input type="text" id="model" name="model" value="{{ car.model }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="year">Year *</label>
+                <input type="number" id="year" name="year" value="{{ car.year }}" min="1900" max="2030" required>
+            </div>
+
+            <div class="form-group">
+                <label for="price">Price ($) *</label>
+                <input type="number" id="price" name="price" value="{{ car.price }}" step="0.01" min="0" required>
+            </div>
+
+            <div class="form-group">
+                <label for="color">Color</label>
+                <input type="text" id="color" name="color" value="{{ car.color or '' }}">
+            </div>
+
+            <div class="form-group">
+                <label for="mileage">Mileage</label>
+                <input type="number" id="mileage" name="mileage" value="{{ car.mileage or '' }}" min="0">
+            </div>
+        </div>
+
+        {% if car.images %}
+        <div class="current-images-section">
+            <h3>📸 Current Images</h3>
+            <div class="current-images-grid">
+                {% for image in car.images %}
+                    <div class="image-item">
+                        <img src="{{ url_for('uploaded_file', filename=image.filename) }}"
+                             alt="Car Image" class="current-image">
+                        <a href="{{ url_for('delete_image', image_id=image.id) }}"
+                           class="delete-image-btn"
+                           onclick="return confirm('Delete this image?')">×</a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="file-upload" id="fileUploadArea">
+            <i>📁</i>
+            <p>Click to upload new images or drag & drop</p>
+            <p style="font-size: 0.9rem; color: #666;">Supports JPG, PNG, GIF (Multiple files allowed)</p>
+            <input type="file" name="images" accept="image/*" multiple style="display: none;" id="fileInput">
+        </div>
+
+        <div id="image-preview"></div>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn btn-primary">
+                <span>💾</span> Update Car
+            </button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                <span>↩️</span> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Enhanced image upload with drag & drop for edit page
+document.addEventListener('DOMContentLoaded', function() {
+    const fileUploadArea = document.getElementById('fileUploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('image-preview');
+
+    // Click to upload
+    fileUploadArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // Drag and drop functionality
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        fileUploadArea.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        fileUploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        fileUploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight() {
+        fileUploadArea.style.borderColor = '#3498db';
+        fileUploadArea.style.backgroundColor = '#e3f2fd';
+    }
+
+    function unhighlight() {
+        fileUploadArea.style.borderColor = '#ddd';
+        fileUploadArea.style.backgroundColor = '#f8f9fa';
+    }
+
+    // Handle dropped files
+    fileUploadArea.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }
+
+    // Handle selected files
+    fileInput.addEventListener('change', function() {
+        handleFiles(this.files);
+    });
+
+    function handleFiles(files) {
+        if (files.length > 0) {
+            if (preview.innerHTML.includes('Selected Images:')) {
+                // Append to existing preview
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const container = document.createElement('div');
+                            container.className = 'preview-image-container';
+                            container.innerHTML = `
+                                <img src="${e.target.result}" class="preview-image">
+                                <span class="remove-preview" onclick="this.parentElement.remove()">×</span>
+                            `;
+                            preview.appendChild(container);
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                }
+            } else {
+                // Create new preview section
+                preview.innerHTML = '<h4>Selected Images:</h4>';
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const container = document.createElement('div');
+                            container.className = 'preview-image-container';
+                            container.innerHTML = `
+                                <img src="${e.target.result}" class="preview-image">
+                                <span class="remove-preview" onclick="this.parentElement.remove()">×</span>
+                            `;
+                            preview.appendChild(container);
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

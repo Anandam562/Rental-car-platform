@@ -1,0 +1,136 @@
+<!-- templates/user/bookings/detail.html -->
+{% extends "user/base.html" %}
+
+{% block title %}Booking #{{ booking.id }} - Details{% endblock %}
+{% block page_title %}Booking #{{ booking.id }} Details{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-car"></i> Booking Details</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Car:</strong> {{ booking.car.make }} {{ booking.car.model }}</p>
+                        <p><strong>Start Date & Time:</strong> {{ booking.start_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                        <p><strong>End Date & Time:</strong> {{ booking.end_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                        <p><strong>Total Price:</strong> ₹{{ "%.2f"|format(booking.total_price) }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong>
+                            <span class="badge bg-{% if booking.status == 'completed' %}success
+                                                {% elif booking.status == 'active' %}info
+                                                {% elif booking.status == 'paid' %}primary
+                                                {% elif booking.status == 'approved' %}secondary
+                                                {% elif booking.status == 'pending' %}warning
+                                                {% elif booking.status == 'cancelled' %}danger
+                                                {% else %}light{% endif %}">
+                                {{ booking.status|title }}
+                            </span>
+                        </p>
+                        <p><strong>Payment Status:</strong> {{ booking.payment_status|title }}</p>
+                        <p><strong>Created At:</strong> {{ booking.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                </div>
+
+                <!-- Pickup Photos -->
+                {% set pickup_photos = booking.get_pickup_photos() %}
+                {% if pickup_photos %}
+                    <div class="mt-4">
+                        <h5>Pickup Photos:</h5>
+                        <div class="row g-2">
+                            {% for photo in pickup_photos %}
+                                <div class="col-6 col-md-4">
+                                    <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" class="img-fluid rounded" alt="Pickup Photo">
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Dropoff Photos -->
+                {% set dropoff_photos = booking.get_dropoff_photos() %}
+                {% if dropoff_photos %}
+                    <div class="mt-4">
+                        <h5>Dropoff Photos:</h5>
+                        <div class="row g-2">
+                            {% for photo in dropoff_photos %}
+                                <div class="col-6 col-md-4">
+                                    <img src="{{ url_for('static', filename='uploads/' + photo.filename) }}" class="img-fluid rounded" alt="Dropoff Photo">
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="mt-4">
+                    {% if booking.status == 'paid' and booking.can_be_activated_by_user() %}
+                    <a href="{{ url_for('user.start_trip', booking_id=booking.id) }}" class="btn btn-success">
+                        <i class="fas fa-play"></i> Start Trip
+                    </a>
+                    {% elif booking.status == 'active' %}
+                    <a href="{{ url_for('user.complete_trip', booking_id=booking.id) }}" class="btn btn-info">
+                        <i class="fas fa-flag-checkered"></i> Complete Trip
+                    </a>
+                    <!-- Cancel Booking Button (Conditional) -->
+                        {% if booking.can_be_cancelled_by_user() %}
+                        <!-- --- CRITICAL FIX: Ensure Correct Endpoint Name ---
+                             The endpoint name depends on which blueprint the route is defined under.
+                             If the route is defined in routes/user/bookings.py with @user_bp.route(...),
+                             the endpoint name is 'user.cancel_booking'.
+                        --->
+                        <form method="POST" action="{{ url_for('user.cancel_booking', booking_id=booking.id) }}" class="d-inline">
+                            <!-- --- END CRITICAL FIX ---
+                                 Ensure the route exists and the endpoint name matches.
+                            --->
+                            <!-- CSRF Token -->
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                            <!-- Cancellation Reason Input (Optional) -->
+                            <input type="hidden" name="reason" value="User Cancelled"/>
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to cancel this booking?')">
+                                <i class="fas fa-trash-alt"></i> Cancel Booking
+                            </button>
+                        </form>
+                     {% endif %}
+    <!-- End Cancel Booking Button -->
+
+                    {% elif booking.status == 'completed' %}
+                    <!-- --- CRITICAL FIX: Give Feedback Button Logic ---
+                         Use booking.can_give_feedback() to check eligibility.
+                         This method checks status, is_completed, and absence of existing feedback.
+                    --->
+                    {% if booking.can_give_feedback() %}
+                    <a href="{{ url_for('user.give_feedback', booking_id=booking.id) }}" class="btn btn-warning">
+                        <i class="fas fa-comment-dots"></i> Give Feedback
+                    </a>
+                    {% else %}
+                    <!-- Button is disabled if feedback cannot be given (e.g., already given) -->
+                    <button class="btn btn-secondary disabled" disabled>
+                        <i class="fas fa-comment-slash"></i> Feedback Already Given
+                    </button>
+                    {% endif %}
+                    <!-- --- END CRITICAL FIX ---
+                         Ensure the 'user.give_feedback' route exists in routes/user/bookings.py
+                    --->
+                    {% elif booking.status == 'cancelled' %}
+                    <button class="btn btn-danger disabled" disabled>
+                        <i class="fas fa-ban"></i> Trip Cancelled
+                    </button>
+                    {% else %}
+                    <button class="btn btn-secondary disabled" disabled>
+                        <i class="fas fa-info-circle"></i> No Action Available
+                    </button>
+                    {% endif %}
+                    <a href="{{ url_for('user.booking_detail', booking_id=booking.id) }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

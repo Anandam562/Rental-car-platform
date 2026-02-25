@@ -1,0 +1,44 @@
+<!-- templates/user/profile/view.html -->
+{% extends "user/base.html" %}
+
+{% block title %}My Profile - {{ user.username }}{% endblock %}
+{% block page_title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-user"></i> Profile Information</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Username:</strong> {{ user.username }}</p>
+                        <p><strong>Email:</strong> {{ user.email }}</p>
+                        <p><strong>Phone:</strong> {{ user.phone or 'Not provided' }}</p>
+                        <p><strong>Wallet Balance:</strong> ₹{{ "%.2f"|format(user.wallet_balance) }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Member Since:</strong> {{ user.created_at.strftime('%Y-%m-%d') }}</p>
+                        <p><strong>Status:</strong>
+                            <span class="badge bg-{% if user.is_active %}success{% else %}secondary{% endif %}">
+                                {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </p>
+                        {% if user.is_admin %}
+                        <p><strong>Role:</strong> <span class="badge bg-danger">Administrator</span></p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <a href="{{ url_for('user.edit_profile') }}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </a>
+                    <!-- Add other profile-related actions here if needed -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

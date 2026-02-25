@@ -1,0 +1,182 @@
+<!-- templates/admin/dashboard.html -->
+{% extends "admin/base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+
+<!-- templates/admin/dashboard.html (Updated Sidebar Links) -->
+<!-- ... (existing HTML) ... -->
+
+<!-- In templates/admin/base.html or templates/admin/dashboard.html sidebar -->
+<ul class="nav flex-column">
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}"
+           href="{{ url_for('admin.dashboard') }}">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint and 'admin.list_users' in request.endpoint %}active{% endif %}"
+           href="{{ url_for('admin.list_users') }}">
+            <i class="fas fa-users"></i> Users
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint and 'admin.list_hosts' in request.endpoint %}active{% endif %}"
+           href="{{ url_for('admin.list_hosts') }}">
+            <i class="fas fa-user-tie"></i> Hosts
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint and 'admin.list_cars' in request.endpoint %}active{% endif %}"
+           href="{{ url_for('admin.list_cars') }}">
+            <i class="fas fa-car"></i> Cars
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint and 'admin.list_bookings' in request.endpoint %}active{% endif %}"
+           href="{{ url_for('admin.list_bookings') }}">
+            <i class="fas fa-receipt"></i> Bookings
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'admin.list_transactions' %}active{% endif %}"
+           href="{{ url_for('admin.list_transactions') }}">
+            <i class="fas fa-money-bill-wave"></i> Transactions
+        </a>
+    </li>
+    <!-- --- CRITICAL FIX: Add Admin Management Links --- -->
+    {% if current_user.can_manage_admins() %} <!-- Check if super admin -->
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'admin.list_admins' %}active{% endif %}"
+           href="{{ url_for('admin.list_admins') }}"> <!-- You'll need to create this route -->
+            <i class="fas fa-users-cog"></i> Manage Admins
+        </a>
+    </li>
+    {% endif %}
+    <!-- --- END CRITICAL FIX --- -->
+</ul>
+
+<!-- ... (rest of template) ... -->
+
+<div class="row">
+    <!-- Stats Cards -->
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-users"></i> Total Users</h5>
+                <h2>{{ total_users }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-user-tie"></i> Total Hosts</h5>
+                <h2>{{ total_hosts }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-car"></i> Total Cars</h5>
+                <h2>{{ total_cars }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-receipt"></i> Total Bookings</h5>
+                <h2>{{ total_bookings }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Users</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_users %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in recent_users %}
+                                <tr>
+                                    <td>#{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">No recent users.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Bookings</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_bookings %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Car</th>
+                                    <th>User</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in recent_bookings %}
+                                <tr>
+                                    <td>#{{ booking.id }}</td>
+                                    <td>{{ booking.car.make }} {{ booking.car.model }}</td>
+                                    <td>{{ booking.user.username }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if booking.status == 'completed' %}success{% elif booking.status == 'active' %}info{% elif booking.status == 'paid' %}primary{% elif booking.status == 'approved' %}secondary{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}light{% endif %}">
+                                            {{ booking.status|title }}
+                                        </span>
+                                    </td>
+                                    <td>{{ booking.created_at.strftime('%Y-%m-%d') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">No recent bookings.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

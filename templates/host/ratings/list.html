@@ -1,0 +1,146 @@
+<!-- templates/host/ratings/list.html -->
+{% extends "host/base.html" %}
+
+{% block title %}Ratings & Reviews{% endblock %}
+{% block page_title %}Ratings & Reviews{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card text-center shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-star"></i> Overall Rating</h5>
+            </div>
+            <div class="card-body">
+                <h1 class="display-4 text-primary">{{ "%.1f"|format(average_rating) }}</h1>
+                <p class="text-muted">{{ total_ratings }} Ratings</p>
+                <div class="d-flex justify-content-center mb-3">
+                    {% for i in range(1, 6) %}
+                    <i class="fas fa-star text-{% if i <= average_rating|round(0, 'floor')|int %}warning{% else %}muted{% endif %}"></i>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4 shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Rating Distribution</h5>
+            </div>
+            <div class="card-body">
+                <!-- --- CRITICAL FIX: Prevent Division by Zero ---
+                     Check if total_ratings is greater than 0 before performing division.
+                     If total_ratings is 0, set width to 0%.
+                --->
+                {% for rating_value in range(5, 0, -1) %}
+                <div class="d-flex align-items-center mb-2">
+                    <span class="me-2">{{ rating_value }} <i class="fas fa-star text-warning"></i></span>
+                    <div class="progress flex-grow-1">
+                        <div class="progress-bar bg-{% if rating_value == 5 %}success
+                                                    {% elif rating_value == 4 %}info
+                                                    {% elif rating_value == 3 %}primary
+                                                    {% elif rating_value == 2 %}warning
+                                                    {% elif rating_value == 1 %}danger
+                                                    {% else %}secondary{% endif %}"
+                             role="progressbar"
+                             <!-- --- CRITICAL FIX: Conditional Width Calculation ---
+                                  Use a ternary operator-like structure in Jinja2:
+                                  If total_ratings > 0, calculate width.
+                                  Else, set width to 0.
+                             --->
+                             style="width: {% if total_ratings > 0 %}{{ ((rating_distribution[rating_value] / total_ratings) * 100)|int }}{% else %}0{% endif %}%"
+                             <!-- --- END CRITICAL FIX ---
+                                  Ensure the aria-valuenow attribute also handles zero ratings.
+                             --->
+                             aria-valuenow="{% if total_ratings > 0 %}{{ rating_distribution[rating_value] }}{% else %}0{% endif %}"
+                             aria-valuemin="0"
+                             <!-- --- CRITICAL FIX: Conditional Max Value ---
+                                  Ensure aria-valuemax also handles zero ratings.
+                             --->
+                             aria-valuemax="{% if total_ratings > 0 %}{{ total_ratings }}{% else %}1{% endif %}">
+                             <!-- --- END CRITICAL FIX ---
+                                  Display the count of ratings for this value.
+                             --->
+                        </div>
+                    </div>
+                    <span class="ms-2">{{ rating_distribution[rating_value] }}</span>
+                </div>
+                {% endfor %}
+                <!-- --- END CRITICAL FIX ---
+                     Ensure the loop handles the case where total_ratings is 0.
+                --->
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-comments"></i> Recent Reviews</h5>
+            </div>
+            <div class="card-body">
+                {% if ratings %}
+                <div class="list-group list-group-flush">
+                    {% for rating in ratings %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-1">
+                                    {% for i in range(1, 6) %}
+                                    <i class="fas fa-star {% if i <= rating.rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                                    {% endfor %}
+                                    <span class="ms-2 fw-bold">({{ rating.rating }}/5)</span>
+                                </div>
+                                <p class="mb-1">{{ rating.comment or 'No comment provided.' }}</p>
+                                <small class="text-muted">From User ID: {{ rating.user_id }} | {{ rating.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination -->
+                {% if ratings_pagination.pages > 1 %}
+                <nav aria-label="Ratings pagination">
+                    <ul class="pagination justify-content-center mt-3">
+                        {% if ratings_pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('host.ratings', page=ratings_pagination.prev_num) }}">Previous</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                        {% endif %}
+
+                        {% for page_num in ratings_pagination.iter_pages() %}
+                        {% if page_num %}
+                        {% if page_num != ratings_pagination.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('host.ratings', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                        {% endif %}
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if ratings_pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('host.ratings', page=ratings_pagination.next_num) }}">Next</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">Next</span></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                <!-- End Pagination -->
+
+                {% else %}
+                <p class="text-muted text-center">No ratings received yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

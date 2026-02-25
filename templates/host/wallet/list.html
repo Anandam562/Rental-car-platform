@@ -1,0 +1,144 @@
+<!-- templates/host/wallet/list.html -->
+{% extends "host/base.html" %}
+
+{% block title %}Host Wallet{% endblock %}
+{% block page_title %}My Wallet{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Wallet Info & Stats -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-wallet"></i> Wallet Balance</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="display-4 text-primary">₹{{ "%.2f"|format(wallet_balance) }}</h2>
+                <p class="text-muted">Current Balance</p>
+                <!-- Placeholder for Deposit/Withdrawal buttons -->
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{{ url_for('host.withdraw_funds') }}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-minus-circle"></i> Withdraw Money
+                    </a>
+                    <a href="{{ url_for('host.list_bank_accounts') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-university"></i> Manage Bank Accounts
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Transaction History</h5>
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th class="text-end">Amount (₹)</th>
+                                <th class="text-end">Balance (₹)</th>
+                                <th>Actions</th> <!-- Column for View Details link -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td>{{ transaction.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <span class="badge bg-{% if transaction.transaction_type in ['deposit', 'earning', 'refund', 'bonus', 'withdrawal_processed'] %}success
+                                                        {% elif transaction.transaction_type in ['withdrawal', 'deduction', 'penalty', 'withdrawal_request'] %}danger
+                                                        {% else %}secondary{% endif %}">
+                                        {{ transaction.transaction_type|title }}
+                                    </span>
+                                </td>
+                                <td>{{ transaction.description }}</td>
+                                <td class="text-end">
+                                    <span class="{% if transaction.transaction_type in ['deposit', 'earning', 'refund', 'bonus', 'withdrawal_processed'] %}text-success fw-bold
+                                                {% elif transaction.transaction_type in ['withdrawal', 'deduction', 'penalty', 'withdrawal_request'] %}text-danger fw-bold{% endif %}">
+                                        {% if transaction.transaction_type in ['deposit', 'earning', 'refund', 'bonus', 'withdrawal_processed'] %}+
+                                        {% elif transaction.transaction_type in ['withdrawal', 'deduction', 'penalty', 'withdrawal_request'] %}-{% endif %}
+                                        {{ "%.2f"|format(transaction.amount) }}
+                                    </span>
+                                </td>
+                                <td class="text-end">{{ "%.2f"|format(transaction.balance_after) }}</td>
+                                <td>
+                                    <a href="{{ url_for('host.wallet_transaction_detail', transaction_id=transaction.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if transactions_pagination.pages > 1 %}
+                <nav aria-label="Transactions pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if transactions_pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('host.wallet', page=transactions_pagination.prev_num) }}">Previous</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                        {% endif %}
+
+                        {% for page_num in transactions_pagination.iter_pages() %}
+                        {% if page_num %}
+                        {% if page_num != transactions_pagination.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('host.wallet', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                        {% endif %}
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if transactions_pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('host.wallet', page=transactions_pagination.next_num) }}">Next</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">Next</span></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                <!-- End Pagination -->
+
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                    <h5>No transactions found</h5>
+                    <p class="text-muted">Your wallet transaction history will appear here.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Widgets -->
+    <div class="col-lg-4">
+        <!-- Optional: Summary Card or Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle"></i> Wallet Information</h5>
+            </div>
+            <div class="card-body">
+                <p>Your wallet balance reflects all deposits, withdrawals, earnings, and deductions.</p>
+                <p>Click "View" on any transaction to see detailed information.</p>
+                <p>Withdrawal requests are subject to admin approval.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

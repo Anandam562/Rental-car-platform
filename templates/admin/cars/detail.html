@@ -1,0 +1,218 @@
+<!-- templates/admin/cars/detail.html -->
+{% extends "admin/base.html" %}
+
+{% block title %}Car Details - {{ car.make }} {{ car.model }}{% endblock %}
+{% block page_title %}Car Details: {{ car.make }} {{ car.model }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-car"></i> {{ car.make }} {{ car.model }} ({{ car.year }})</h5>
+            </div>
+            <div class="card-body">
+                <!-- Car Images -->
+                {% if car.images %}
+                    <div id="carImageCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for image in car.images %}
+                            <div class="carousel-item {% if loop.first %}active{% endif %}">
+                                <img src="{{ url_for('static', filename='uploads/' + image.filename) }}"
+                                     class="d-block w-100" alt="{{ car.make }} {{ car.model }} Image {{ loop.index }}"
+                                     style="height: 300px; object-fit: cover;">
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if car.images|length > 1 %}
+                        <button class="carousel-control-prev" type="button" data-bs-target="#carImageCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon"></span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#carImageCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon"></span>
+                        </button>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-64 flex items-center justify-center mb-4">
+                        <i class="fas fa-car text-gray-400 text-4xl"></i>
+                    </div>
+                {% endif %}
+
+                <!-- Car Specifications -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Make:</strong> {{ car.make }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Model:</strong> {{ car.model }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Year:</strong> {{ car.year }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Price/Day:</strong> ₹{{ "%.2f"|format(car.price_per_day) }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Color:</strong> {{ car.color or 'N/A' }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Mileage:</strong> {{ car.mileage or 'N/A' }} km
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <strong>Fuel Type:</strong> {{ car.fuel_type }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Transmission:</strong> {{ car.transmission }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Seats:</strong> {{ car.seats }}
+                    </div>
+                </div>
+
+                <!-- Features -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <strong>Features:</strong>
+                        <div class="mt-1">
+                            {% if car.has_ac %}<span class="badge bg-success me-1">AC</span>{% endif %}
+                            {% if car.has_bluetooth %}<span class="badge bg-success me-1">Bluetooth</span>{% endif %}
+                            {% if car.has_sunroof %}<span class="badge bg-success me-1">Sunroof</span>{% endif %}
+                            {% if car.has_gps %}<span class="badge bg-success me-1">GPS</span>{% endif %}
+                            {% if car.has_usb_port %}<span class="badge bg-success me-1">USB Port</span>{% endif %}
+                            {% if car.has_reverse_camera %}<span class="badge bg-success me-1">Reverse Camera</span>{% endif %}
+                            {% if not (car.has_ac or car.has_bluetooth or car.has_sunroof or car.has_gps or car.has_usb_port or car.has_reverse_camera) %}
+                                <span class="text-muted">No features listed</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Details -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <strong>Location:</strong>
+                        <div class="mt-1">
+                            <p class="mb-1">
+                                {% if car.full_address %}
+                                    {{ car.full_address }}
+                                {% else %}
+                                    {% if car.street_address %}{{ car.street_address }}, {% endif %}
+                                    {% if car.locality %}{{ car.locality }}, {% endif %}
+                                    {% if car.city %}{{ car.city }}{% endif %}
+                                    {% if car.state %}, {{ car.state }}{% endif %}
+                                    {% if car.pincode %} - {{ car.pincode }}{% endif %}
+                                {% endif %}
+                            </p>
+                            {% if car.latitude and car.longitude %}
+                                <small class="text-muted">Coordinates: {{ "%.6f"|format(car.latitude) }}, {{ "%.6f"|format(car.longitude) }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Host Info -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Host:</strong> {{ car.host.company_name or car.host.user.username }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Host Status:</strong>
+                        {% if car.host.is_verified %}
+                            <span class="badge bg-success">Verified</span>
+                        {% else %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Availability:</strong>
+                        {% if car.is_available %}
+                            <span class="badge bg-success">Available</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Unavailable</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Blocking Status:</strong>
+                        {% if car.is_blocked %}
+                            <span class="badge bg-danger">Blocked</span>
+                            {% if car.blocked_reason %}
+                                <small class="text-muted d-block">Reason: {{ car.blocked_reason }}</small>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-success">Not Blocked</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cogs"></i> Admin Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if car.is_blocked %}
+                        <form method="POST" action="{{ url_for('admin.toggle_car_block', car_id=car.id) }}">
+                            <input type="hidden" name="reason" value="Unblocked by admin">
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('Unblock car {{ car.make }} {{ car.model }}?')">
+                                <i class="fas fa-unlock"></i> Unblock Car
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('admin.toggle_car_block', car_id=car.id) }}">
+                            <input type="hidden" name="reason" value="Blocked by admin">
+                            <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Block car {{ car.make }} {{ car.model }}?')">
+                                <i class="fas fa-lock"></i> Block Car
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    <a href="{{ url_for('admin.list_cars') }}" class="btn btn-secondary w-100">
+                        <i class="fas fa-arrow-left"></i> Back to Cars
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Booking History</h5>
+            </div>
+            <div class="card-body">
+                {% if car.bookings %}
+                    <ul class="list-group list-group-flush">
+                        {% for booking in car.bookings[:5] %} <!-- Show last 5 -->
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <span>Booking #{{ booking.id }}</span>
+                                <span class="badge bg-{% if booking.status == 'completed' %}success{% elif booking.status == 'active' %}info{% elif booking.status == 'paid' %}primary{% elif booking.status == 'approved' %}secondary{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}light{% endif %}">
+                                    {{ booking.status|title }}
+                                </span>
+                            </div>
+                            <small class="text-muted">{{ booking.user.username }} • {{ booking.start_date.strftime('%Y-%m-%d') }} to {{ booking.end_date.strftime('%Y-%m-%d') }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% if car.bookings|length > 5 %}
+                        <a href="{{ url_for('admin.list_bookings', car_id=car.id) }}" class="btn btn-sm btn-outline-primary mt-2">View All Bookings</a>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted">No bookings for this car yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

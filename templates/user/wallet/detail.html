@@ -1,0 +1,89 @@
+<!-- templates/user/wallet/detail.html -->
+{% extends "user/base.html" %}
+
+{% block title %}Transaction Details #{{ transaction.id }}{% endblock %}
+{% block page_title %}Transaction Details{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-receipt"></i> Transaction #{{ transaction.id }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>ID:</strong> {{ transaction.id }}</p>
+                        <p><strong>Type:</strong>
+                            <span class="badge bg-{% if transaction.transaction_type in ['deposit', 'earning', 'refund', 'bonus'] %}success
+                                                {% elif transaction.transaction_type in ['withdrawal', 'deduction', 'penalty'] %}danger
+                                                {% else %}secondary{% endif %}">
+                                {{ transaction.transaction_type|title }}
+                            </span>
+                        </p>
+                        <p><strong>Amount:</strong>
+                            <span class="{% if transaction.transaction_type in ['deposit', 'earning', 'refund', 'bonus'] %}text-success fw-bold
+                                        {% elif transaction.transaction_type in ['withdrawal', 'deduction', 'penalty'] %}text-danger fw-bold{% endif %}">
+                                {% if transaction.transaction_type in ['deposit', 'earning', 'refund', 'bonus'] %}+
+                                {% elif transaction.transaction_type in ['withdrawal', 'deduction', 'penalty'] %}-{% endif %}
+                                ₹{{ "%.2f"|format(transaction.amount) }}
+                            </span>
+                        </p>
+                        <p><strong>Balance After:</strong> ₹{{ "%.2f"|format(transaction.balance_after) }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Date & Time:</strong> {{ transaction.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                        <p><strong>Description:</strong> {{ transaction.description }}</p>
+                        {% if transaction.reference_type %}
+                        <p><strong>Reference Type:</strong> {{ transaction.reference_type|title }}</p>
+                        {% endif %}
+                        {% if transaction.reference_id %}
+                        <p><strong>Reference ID:</strong> {{ transaction.reference_id }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr>
+
+                <!-- Related Object Details (if applicable) -->
+                {% if related_object %}
+                <h5>Related Information</h5>
+                {% if transaction.reference_type == 'booking' or transaction.reference_type == 'host_earning' or transaction.reference_type == 'booking_payment' or transaction.reference_type == 'booking_refund' or transaction.reference_type == 'cancellation_fee' %}
+                <!-- Display Booking Details -->
+                <div class="mb-3">
+                    <h6><i class="fas fa-car"></i> Booking #{{ related_object.id }}</h6>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Car:</strong> {{ related_object.car.make }} {{ related_object.car.model }}</li>
+                        <li class="list-group-item"><strong>Start Date:</strong> {{ related_object.start_date.strftime('%Y-%m-%d %H:%M') }}</li>
+                        <li class="list-group-item"><strong>End Date:</strong> {{ related_object.end_date.strftime('%Y-%m-%d %H:%M') }}</li>
+                        <li class="list-group-item"><strong>Total Price:</strong> ₹{{ "%.2f"|format(related_object.total_price) }}</li>
+                        <li class="list-group-item"><strong>Status:</strong> {{ related_object.status|title }}</li>
+                        <!-- Add more booking details as needed -->
+                    </ul>
+                    <a href="{{ url_for('user.booking_detail', booking_id=related_object.id) }}" class="btn btn-sm btn-outline-primary mt-2">
+                        <i class="fas fa-eye"></i> View Booking Details
+                    </a>
+                </div>
+                {% elif transaction.reference_type == 'admin_adjustment' %}
+                 <!-- Display Admin Adjustment Details (if you store admin info) -->
+                 <p><strong>Adjusted by Admin:</strong> (Details would be fetched if stored)</p>
+                 <p><strong>Reason:</strong> {{ transaction.description.split(': ', 1)[1] if ': ' in transaction.description else transaction.description }}</p> <!-- Extract reason after colon -->
+                {% endif %}
+                {% else %}
+                <p class="text-muted">No specific related object found or type not handled.</p>
+                {% endif %}
+                <!-- End Related Object Details -->
+
+                <hr>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{{ url_for('user.wallet') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Wallet
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

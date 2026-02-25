@@ -1,0 +1,129 @@
+<!-- templates/host/analytics/feedbacks.html -->
+{% extends "host/base.html" %}
+
+{% block title %}Feedback Management{% endblock %}
+{% block page_title %}Feedback Management{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-comment-dots"></i> Customer Feedback</h5>
+            <span class="badge bg-{% if unresolved_count > 0 %}warning{% else %}success{% endif %}">
+                {{ unresolved_count }} Unresolved
+            </span>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if feedbacks %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>From</th>
+                            <th>Subject</th>
+                            <th>Message</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for feedback in feedbacks %}
+                        <tr class="{% if not feedback.is_resolved %}table-warning{% endif %}">
+                            <td>{{ feedback.user.username }}</td>
+                            <td>{{ feedback.subject or 'No Subject' }}</td>
+                            <td>
+                                {% if feedback.message|length > 50 %}
+                                    {{ feedback.message[:50] }}...
+                                    <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#feedback-{{ feedback.id }}">
+                                        View
+                                    </button>
+                                    <div class="collapse mt-2" id="feedback-{{ feedback.id }}">
+                                        {{ feedback.message }}
+                                    </div>
+                                {% else %}
+                                    {{ feedback.message }}
+                                {% endif %}
+                            </td>
+                            <td>{{ feedback.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if feedback.is_resolved %}
+                                    <span class="badge bg-success">Resolved</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not feedback.is_resolved %}
+                                    <form method="POST" action="{{ url_for('host.resolve_feedback', feedback_id=feedback.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-success" onclick="return confirm('Mark this feedback as resolved?')">
+                                            <i class="fas fa-check"></i> Resolve
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+             <!-- Simple Pagination for Feedbacks -->
+             {% if feedbacks_pagination.pages > 1 %}
+             <nav aria-label="Feedbacks pagination">
+                 <ul class="pagination justify-content-center">
+                     {% if feedbacks_pagination.has_prev %}
+                         <li class="page-item">
+                             <a class="page-link" href="{{ url_for('host.feedbacks', page=feedbacks_pagination.prev_num) }}">Previous</a>
+                         </li>
+                     {% else %}
+                         <li class="page-item disabled">
+                             <span class="page-link">Previous</span>
+                         </li>
+                     {% endif %}
+
+                     {% for page_num in feedbacks_pagination.iter_pages() %}
+                         {% if page_num %}
+                             {% if page_num != feedbacks_pagination.page %}
+                                 <li class="page-item">
+                                     <a class="page-link" href="{{ url_for('host.feedbacks', page=page_num) }}">{{ page_num }}</a>
+                                 </li>
+                             {% else %}
+                                 <li class="page-item active">
+                                     <span class="page-link">{{ page_num }}</span>
+                                 </li>
+                             {% endif %}
+                         {% else %}
+                             <li class="page-item disabled">
+                                 <span class="page-link">&hellip;</span>
+                             </li>
+                         {% endif %}
+                     {% endfor %}
+
+                     {% if feedbacks_pagination.has_next %}
+                         <li class="page-item">
+                             <a class="page-link" href="{{ url_for('host.feedbacks', page=feedbacks_pagination.next_num) }}">Next</a>
+                         </li>
+                     {% else %}
+                         <li class="page-item disabled">
+                             <span class="page-link">Next</span>
+                         </li>
+                     {% endif %}
+                 </ul>
+             </nav>
+             {% endif %}
+
+
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
+                <h5>No feedback received yet</h5>
+                <p class="text-muted">Customer feedback will appear here.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

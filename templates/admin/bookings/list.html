@@ -1,0 +1,126 @@
+<!-- templates/admin/bookings/list.html -->
+{% extends "admin/base.html" %}
+
+{% block title %}Manage Bookings{% endblock %}
+{% block page_title %}Manage Bookings{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-receipt"></i> All Bookings</h5>
+            <form method="GET" action="{{ url_for('admin.list_bookings') }}" class="d-flex">
+                <input type="text" name="search" class="form-control form-control-sm me-2" placeholder="Search by ID, Car, User..." value="{{ search_query }}">
+                <button class="btn btn-outline-primary btn-sm" type="submit"><i class="fas fa-search"></i></button>
+            </form>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if bookings %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Booking ID</th>
+                            <th>Car</th>
+                            <th>Host</th>
+                            <th>User</th>
+                            <th>Dates</th>
+                            <th>Total Price</th>
+                            <th>Payment Status</th>
+                            <th>Booking Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                        <tr>
+                            <td>#{{ booking.id }}</td>
+                            <td>{{ booking.car.make }} {{ booking.car.model }}</td>
+                            <td>{{ booking.car.host.company_name or booking.car.host.user.username }}</td>
+                            <td>{{ booking.user.username }}</td>
+                            <td>
+                                {{ booking.start_date.strftime('%Y-%m-%d') }}<br>
+                                to {{ booking.end_date.strftime('%Y-%m-%d') }}
+                            </td>
+                            <td>₹{{ "%.2f"|format(booking.total_price) }}</td>
+                            <td>
+                                <span class="badge bg-{% if booking.payment_status == 'completed' %}success{% elif booking.payment_status == 'pending' %}warning{% elif booking.payment_status == 'failed' %}danger{% else %}secondary{% endif %}">
+                                    {{ booking.payment_status|title }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if booking.status == 'completed' %}success{% elif booking.status == 'active' %}info{% elif booking.status == 'paid' %}primary{% elif booking.status == 'approved' %}secondary{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}light{% endif %}">
+                                    {{ booking.status|title }}
+                                </span>
+                                {% if booking.is_active %}<span class="badge bg-info">Active</span>{% endif %}
+                                {% if booking.is_completed %}<span class="badge bg-success">Completed</span>{% endif %}
+                            </td>
+                            <td>{{ booking.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <a href="{{ url_for('admin.booking_detail', booking_id=booking.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if bookings_pagination.pages > 1 %}
+            <nav aria-label="Bookings pagination">
+                <ul class="pagination justify-content-center">
+                    {% if bookings_pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.list_bookings', page=bookings_pagination.prev_num, search=search_query) }}">Previous</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Previous</span>
+                        </li>
+                    {% endif %}
+
+                    {% for page_num in bookings_pagination.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != bookings_pagination.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin.list_bookings', page=page_num, search=search_query) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&hellip;</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if bookings_pagination.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin.list_bookings', page=bookings_pagination.next_num, search=search_query) }}">Next</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">Next</span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                <h4>No bookings found</h4>
+                <p class="text-muted">Try adjusting your search criteria.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

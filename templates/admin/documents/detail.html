@@ -1,0 +1,108 @@
+<!-- templates/admin/documents/detail.html -->
+{% extends "admin/base.html" %}
+
+{% block title %}Document Details - #{{ document.id }}{% endblock %}
+{% block page_title %}Document Details: #{{ document.id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-file-alt"></i> {{ document.document_type|title }} Document #{{ document.id }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>User:</strong> {{ document.user.username }} ({{ document.user.email }})
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Status:</strong>
+                        {% if document.is_verified %}
+                            <span class="badge bg-success">Verified</span>
+                        {% else %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Uploaded:</strong> {{ document.uploaded_at.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                    <div class="col-md-6">
+                        {% if document.verified_at %}
+                            <strong>Verified:</strong> {{ document.verified_at.strftime('%Y-%m-%d %H:%M') }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if document.verified_at %}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <strong>Verified By:</strong> Admin (System)
+                    </div>
+                </div>
+                {% endif %}
+
+                <hr>
+
+                <div class="mb-3">
+                    <h6>Document Image</h6>
+                    {% if document.filename %}
+                        <div class="text-center">
+                            <img src="{{ url_for('static', filename='uploads/' + document.filename) }}"
+                                 class="img-fluid border rounded" alt="{{ document.document_type }} Document"
+                                 style="max-height: 500px;">
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No document image available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cogs"></i> Admin Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if not document.is_verified %}
+                        <form method="POST" action="{{ url_for('admin.verify_document', doc_id=document.id) }}">
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('Verify this {{ document.document_type }} document for {{ document.user.username }}?')">
+                                <i class="fas fa-check-circle"></i> Verify Document
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('admin.reject_document', doc_id=document.id) }}">
+                            <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Reject this {{ document.document_type }} document for {{ document.user.username }}?')">
+                                <i class="fas fa-times-circle"></i> Reject Document
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    <a href="{{ url_for('admin.list_documents') }}" class="btn btn-secondary w-100">
+                        <i class="fas fa-arrow-left"></i> Back to Documents
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user"></i> User Profile</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>{{ document.user.username }}</strong></p>
+                <p>Email: {{ document.user.email }}</p>
+                <p>Phone: {{ document.user.phone or 'N/A' }}</p>
+                <a href="{{ url_for('admin.user_detail', user_id=document.user.id) }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye"></i> View User Profile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

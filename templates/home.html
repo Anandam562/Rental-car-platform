@@ -1,0 +1,324 @@
+<!-- templates/home.html -->
+{% extends "base.html" %}
+
+{% block title %}Home - ZoomCar Clone{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section bg-primary text-white py-5">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h1 class="display-4 fw-bold">🚗 Drive Your Freedom</h1>
+                <p class="lead mb-4">Rent the perfect car for your journey or list your car and earn money.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="#search-section" class="btn btn-light btn-lg">
+                        <i class="fas fa-search me-2"></i>Rent a Car
+                    </a>
+                    <a href="{{ url_for('host.login') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-car me-2"></i>List Your Car
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <i class="fas fa-car-side fa-10x"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How It Works Section -->
+<div class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">How It Works</h2>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card h-100 border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>For Customers</h5>
+                    </div>
+                    <div class="card-body">
+                        <ol class="list-group list-group-numbered">
+                            <li class="list-group-item">Search for cars in your city and select dates</li>
+                            <li class="list-group-item">Choose the perfect car from our listings</li>
+                            <li class="list-group-item">Book online and get instant confirmation</li>
+                            <li class="list-group-item">Pick up, drive, and return hassle-free</li>
+                            <li class="list-group-item">Leave a review and help others!</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 border-success">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i>For Hosts</h5>
+                    </div>
+                    <div class="card-body">
+                        <ol class="list-group list-group-numbered">
+                            <li class="list-group-item">Sign up as a host and verify your profile</li>
+                            <li class="list-group-item">List your car with photos and details</li>
+                            <li class="list-group-item">Set your price and availability</li>
+                            <li class="list-group-item">Get bookings and earn money</li>
+                            <li class="list-group-item">Manage your cars and track earnings</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Section -->
+<div id="search-section" class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-4">Find Your Perfect Ride</h2>
+        <div class="card shadow">
+            <div class="card-body">
+                <form action="{{ url_for('car.car_list') }}" method="GET" id="searchForm">
+                    <div class="row g-3">
+                        <!-- Location Input with Suggestions -->
+                        <div class="col-md-5">
+                            <label for="location_input" class="form-label"><i class="fas fa-map-marker-alt me-1"></i> Location</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="location_input" name="q" placeholder="Enter city, area, or pincode" autocomplete="off" required>
+                                <button class="btn btn-outline-secondary" type="button" id="detectLocationBtn" title="Detect my location">
+                                    <i class="fas fa-location-arrow"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" id="selected_lat" name="user_lat">
+                            <input type="hidden" id="selected_lng" name="user_lng">
+                            <input type="hidden" id="selected_city" name="city">
+                            <input type="hidden" id="selected_locality" name="locality">
+                            <input type="hidden" id="selected_pincode" name="pincode">
+                            <!-- Suggestions Dropdown -->
+                            <ul id="suggestionsList" class="list-group position-absolute z-1000 w-100" style="display:none; max-height: 200px; overflow-y: auto;"></ul>
+                            <div id="locationStatus" class="form-text"></div>
+                        </div>
+
+                        <!-- Date Pickers -->
+                        <div class="col-md-3">
+                            <label for="start_date" class="form-label"><i class="fas fa-calendar-start me-1"></i> Start Date</label>
+                            <input type="date" name="starts" id="start_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="end_date" class="form-label"><i class="fas fa-calendar-end me-1"></i> End Date</label>
+                            <input type="date" name="ends" id="end_date" class="form-control" required>
+                        </div>
+
+                        <!-- Search Button -->
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100" id="searchButton">
+                                <i class="fas fa-search"></i> <span class="d-none d-md-inline">Search</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Features/Benefits Section -->
+<div class="py-5">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="text-center">
+                    <div class="feature-icon bg-primary text-white rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-car fa-2x"></i>
+                    </div>
+                    <h5>Wide Selection</h5>
+                    <p class="text-muted">Hundreds of cars from trusted hosts.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <div class="feature-icon bg-success text-white rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-tags fa-2x"></i>
+                    </div>
+                    <h5>Best Prices</h5>
+                    <p class="text-muted">Competitive pricing with no hidden fees.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-center">
+                    <div class="feature-icon bg-info text-white rounded-circle mx-auto mb-3" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-headset fa-2x"></i>
+                    </div>
+                    <h5>24/7 Support</h5>
+                    <p class="text-muted">Round-the-clock customer support.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action Section -->
+<div class="py-5 bg-dark text-white">
+    <div class="container text-center">
+        <h2 class="mb-3">Got a Car? Start Earning Today!</h2>
+        <p class="lead mb-4">Join our community of hosts and monetize your vehicle when it's not in use.</p>
+        <a href="{{ url_for('host.login') }}" class="btn btn-success btn-lg">
+            <i class="fas fa-car me-2"></i>Become a Host
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Date Logic ---
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('start_date').min = today;
+    document.getElementById('end_date').min = today;
+
+    // Set default dates: start = today, end = tomorrow
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 1);
+
+    document.getElementById('start_date').value = startDate.toISOString().split('T')[0];
+    document.getElementById('end_date').value = endDate.toISOString().split('T')[0];
+    // --- End Date Logic ---
+
+    // --- Location Suggestion Logic ---
+    const locationInput = document.getElementById('location_input');
+    const suggestionsList = document.getElementById('suggestionsList');
+    const locationStatus = document.getElementById('locationStatus');
+    const selectedLat = document.getElementById('selected_lat');
+    const selectedLng = document.getElementById('selected_lng');
+    const selectedCity = document.getElementById('selected_city');
+    const selectedLocality = document.getElementById('selected_locality');
+    const selectedPincode = document.getElementById('selected_pincode');
+    const detectLocationBtn = document.getElementById('detectLocationBtn');
+    const searchForm = document.getElementById('searchForm');
+
+    let debounceTimer;
+
+    locationInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        clearTimeout(debounceTimer);
+        suggestionsList.style.display = 'none';
+
+        if (query.length < 2) {
+            locationStatus.textContent = '';
+            return;
+        }
+
+        locationStatus.innerHTML = '<span class="text-primary"><i class="fas fa-spinner fa-spin"></i> Searching...</span>';
+        debounceTimer = setTimeout(() => {
+            fetch(`/suggest?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    suggestionsList.innerHTML = '';
+                    if (data.error) {
+                         locationStatus.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> ${data.error}</span>`;
+                         return;
+                    }
+                    if (data.length === 0) {
+                        locationStatus.innerHTML = '<span class="text-muted">No suggestions found.</span>';
+                        return;
+                    }
+                    locationStatus.textContent = '';
+                    data.forEach(item => {
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item list-group-item-action';
+                        li.textContent = item.display_name;
+                        li.dataset.lat = item.lat;
+                        li.dataset.lon = item.lon;
+                        li.dataset.city = item.city || '';
+                        li.dataset.locality = item.locality || item.suburb || item.neighbourhood || item.hamlet || '';
+                        li.dataset.pincode = item.postcode || '';
+                        li.addEventListener('click', function() {
+                            selectLocation(this);
+                        });
+                        suggestionsList.appendChild(li);
+                    });
+                    suggestionsList.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Suggestion error:', error);
+                    locationStatus.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> Failed to fetch suggestions.</span>';
+                });
+        }, 300); // Debounce for 300ms
+    });
+
+    function selectLocation(listItem) {
+        const displayName = listItem.textContent;
+        const lat = listItem.dataset.lat;
+        const lon = listItem.dataset.lon;
+        const city = listItem.dataset.city;
+        const locality = listItem.dataset.locality;
+        const pincode = listItem.dataset.pincode;
+
+        locationInput.value = displayName;
+        selectedLat.value = lat;
+        selectedLng.value = lon;
+        selectedCity.value = city;
+        selectedLocality.value = locality;
+        selectedPincode.value = pincode;
+        suggestionsList.style.display = 'none';
+        locationStatus.innerHTML = `<span class="text-success"><i class="fas fa-check"></i> Location selected.</span>`;
+    }
+
+    // Close suggestions if clicked outside
+    document.addEventListener('click', function(e) {
+        if (!locationInput.contains(e.target) && !suggestionsList.contains(e.target)) {
+            suggestionsList.style.display = 'none';
+        }
+    });
+
+    // --- Detect User Location ---
+    detectLocationBtn.addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            locationStatus.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> Geolocation is not supported by your browser.</span>';
+            return;
+        }
+
+        detectLocationBtn.disabled = true;
+        locationStatus.innerHTML = '<span class="text-primary"><i class="fas fa-spinner fa-spin"></i> Detecting your location...</span>';
+
+        navigator.geolocation.getCurrentPosition(
+            // Success
+            function(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                selectedLat.value = lat.toFixed(6);
+                selectedLng.value = lon.toFixed(6);
+                locationStatus.innerHTML = `<span class="text-success"><i class="fas fa-check"></i> Location detected (Lat: ${selectedLat.value}, Lng: ${selectedLng.value}). Searching nearby...</span>`;
+
+                // Use Reverse Geocoding to get a display name (optional, for user feedback)
+                // You could also directly submit the form with lat/lng
+                // For now, we'll just show the coordinates were detected.
+                // The backend can use these for proximity search.
+
+                detectLocationBtn.disabled = false;
+            },
+            // Error
+            function(error) {
+                let errorMsg = 'Unable to retrieve your location.';
+                if (error.code === error.PERMISSION_DENIED) {
+                    errorMsg = 'Location access denied by user.';
+                } else if (error.code === error.POSITION_UNAVAILABLE) {
+                    errorMsg = 'Location information is unavailable.';
+                } else if (error.code === error.TIMEOUT) {
+                    errorMsg = 'The request to get user location timed out.';
+                }
+                locationStatus.innerHTML = `<span class="text-danger"><i class="fas fa-exclamation-triangle"></i> ${errorMsg}</span>`;
+                console.error("Geolocation error:", error);
+                detectLocationBtn.disabled = false;
+            },
+            // Options
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 300000 // 5 minutes
+            }
+        );
+    });
+    // --- End Detect User Location ---
+});
+</script>
+{% endblock %}

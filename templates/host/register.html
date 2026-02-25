@@ -1,0 +1,166 @@
+<!-- templates/host/register.html -->
+{% extends "base.html" %} <!-- Or your main base template -->
+
+{% block title %}Host Registration{% endblock %}
+{% block page_title %}Register as Host{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header text-center bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-user-tie"></i> Register as Host</h4>
+            </div>
+            <div class="card-body">
+                {% with messages = get_flashed_messages() %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{% if 'success' in message %}success{% elif 'danger' in message or 'error' in message %}danger{% elif 'warning' in message %}warning{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- CRITICAL FIX 5: Use WTForm in Template -->
+                <form method="POST">
+                    <!-- Render the CSRF token field provided by WTForms -->
+                    {{ form.csrf_token }} <!-- This renders the hidden input -->
+
+                    <!-- Email -->
+                    <div class="mb-3">
+                        <label for="{{ form.email.id }}" class="form-label">{{ form.email.label.text }} *</label>
+                        {{ form.email(class="form-control", value=prefill_email) }}
+                        {% if form.email.errors %}
+                            <div class="text-danger">
+                                {% for error in form.email.errors %}
+                                    <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-3">
+                        <label for="{{ form.password.id }}" class="form-label">{{ form.password.label.text }} *</label>
+                        {{ form.password(class="form-control") }}
+                        {% if form.password.errors %}
+                            <div class="text-danger">
+                                {% for error in form.password.errors %}
+                                    <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div class="mb-3">
+                        <label for="{{ form.confirm_password.id }}" class="form-label">{{ form.confirm_password.label.text }} *</label>
+                        {{ form.confirm_password(class="form-control") }}
+                        {% if form.confirm_password.errors %}
+                            <div class="text-danger">
+                                {% for error in form.confirm_password.errors %}
+                                    <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Company Name -->
+                    <div class="mb-3">
+                        <label for="{{ form.company_name.id }}" class="form-label">{{ form.company_name.label.text }} *</label>
+                        {{ form.company_name(class="form-control") }}
+                        <div class="form-text">This will be shown to customers.</div>
+                        {% if form.company_name.errors %}
+                            <div class="text-danger">
+                                {% for error in form.company_name.errors %}
+                                    <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="mb-3">
+                        <label for="{{ form.phone.id }}" class="form-label">{{ form.phone.label.text }} *</label>
+                        {{ form.phone(class="form-control") }}
+                        {% if form.phone.errors %}
+                            <div class="text-danger">
+                                {% for error in form.phone.errors %}
+                                    <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Address -->
+                    <div class="mb-3">
+                        <label for="{{ form.address.id }}" class="form-label">{{ form.address.label.text }}</label>
+                        {{ form.address(class="form-control", rows="3") }}
+                        {% if form.address.errors %}
+                            <div class="text-danger">
+                                {% for error in form.address.errors %}
+                                    <small><i class="fas fa-exclamation-circle"></i> {{ error }}</small><br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Hidden Location Fields (Populated by previous step or JS) -->
+                    {{ form.latitude() }}
+                    {{ form.longitude() }}
+                    {{ form.full_address() }}
+                    {{ form.street_address() }}
+                    {{ form.locality() }}
+                    {{ form.city() }}
+                    {{ form.state() }}
+                    {{ form.pincode() }}
+
+                    <!-- Submit Button -->
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-success w-100") }}
+                    </div>
+                </form>
+                <!-- END CRITICAL FIX 5 -->
+
+                <hr>
+
+                <div class="text-center">
+                    <p>Already registered as a host? <a href="{{ url_for('host.login') }}">Login here</a></p>
+                    {% if not current_user.is_authenticated %}
+                        <p>Are you a customer? <a href="{{ url_for('auth.register') }}">Register as Customer</a> | <a href="{{ url_for('auth.login') }}">Login as Customer</a></p>
+                    {% endif %}
+                    <p><a href="{{ url_for('car.home') }}">← Back to Main Site</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- Optional: Add any specific JavaScript for this page if needed -->
+<!-- For example, to handle location detection/population from a previous step -->
+<script>
+// Example: If location data was passed from a previous step (e.g., via query params or session)
+// You would retrieve it here and populate the hidden fields
+// This is just a placeholder/example
+/*
+document.addEventListener('DOMContentLoaded', function() {
+    // Get location data from query params or session storage
+    const urlParams = new URLSearchParams(window.location.search);
+    const lat = urlParams.get('lat');
+    const lng = urlParams.get('lng');
+    // ... other location params ...
+
+    if (lat && lng) {
+        document.getElementById('{{ form.latitude.id }}').value = lat;
+        document.getElementById('{{ form.longitude.id }}').value = lng;
+        // ... populate other fields ...
+    }
+});
+*/
+</script>
+{% endblock %}

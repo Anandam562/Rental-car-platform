@@ -1,0 +1,45 @@
+<!-- templates/user/wallet/dashboard_widget.html -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-wallet"></i> My Wallet</h5>
+    </div>
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h6 class="text-muted">Balance</h6>
+                <h3 class="mb-0 text-primary">₹{{ "%.2f"|format(wallet_balance) }}</h3>
+            </div>
+            <div>
+                <a href="{{ url_for('user.wallet') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-history"></i> View History
+                </a>
+            </div>
+        </div>
+
+        {% if recent_transactions %}
+        <h6 class="text-muted mb-2">Recent Transactions</h6>
+        <ul class="list-group list-group-flush">
+            {% for transaction in recent_transactions %}
+            <li class="list-group-item px-0 py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="fw-medium">{{ transaction.description[:30] }}{% if transaction.description|length > 30 %}...{% endif %}</span>
+                        <br>
+                        <small class="text-muted">{{ transaction.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="fw-medium {% if transaction.transaction_type in ['deposit', 'earning', 'refund'] %}text-success{% else %}text-danger{% endif %}">
+                            {% if transaction.transaction_type in ['deposit', 'earning', 'refund'] %}+{% else %}-{% endif %}₹{{ "%.2f"|format(transaction.amount) }}
+                        </span>
+                        <br>
+                        <small class="text-muted">Bal: ₹{{ "%.2f"|format(transaction.balance_after) }}</small>
+                    </div>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted text-center mb-0">No transactions yet.</p>
+        {% endif %}
+    </div>
+</div>

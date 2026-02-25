@@ -1,0 +1,22 @@
+REM Create main files
+type nul > app.py
+type nul > config.py
+type nul > models.py
+type nul > requirements.txt
+
+REM Create templates folder and HTML files
+mkdir templates
+cd templates
+type nul > base.html
+type nul > index.html
+type nul > edit_car.html
+cd ..
+
+REM Create static folder and CSS file
+mkdir static
+cd static
+type nul > style.css
+cd ..
+
+echo Flask project structure created successfully!
+pause

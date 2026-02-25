@@ -1,0 +1,167 @@
+<!-- templates/admin/users/detail.html -->
+{% extends "admin/base.html" %}
+
+{% block title %}User Details - {{ user.username }}{% endblock %}
+{% block page_title %}User Details: {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user"></i> User Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>ID:</strong> {{ user.id }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Username:</strong> {{ user.username }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Email:</strong> {{ user.email }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Phone:</strong> {{ user.phone or 'N/A' }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Status:</strong>
+                        {% if user.is_active %}
+                            <span class="badge bg-success">Active</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                        {% endif %}
+                        {% if user.is_admin %}
+                            <span class="badge bg-purple">Admin</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Joined:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>RC Document:</strong>
+                        {% if user.rc_document %}
+                            <a href="{{ url_for('static', filename='uploads/' + user.rc_document.filename) }}" target="_blank">View RC</a>
+                            {% if user.rc_document.is_verified %}
+                                <span class="badge bg-success">Verified</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">Not uploaded</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>DL Document:</strong>
+                        {% if user.dl_document %}
+                            <a href="{{ url_for('static', filename='uploads/' + user.dl_document.filename) }}" target="_blank">View DL</a>
+                            {% if user.dl_document.is_verified %}
+                                <span class="badge bg-success">Verified</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">Not uploaded</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-receipt"></i> User Bookings</h5>
+            </div>
+            <div class="card-body">
+                {% if user.bookings %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Booking ID</th>
+                                    <th>Car</th>
+                                    <th>Dates</th>
+                                    <th>Total Price</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in user.bookings %}
+                                <tr>
+                                    <td><a href="{{ url_for('admin.booking_detail', booking_id=booking.id) }}">#{{ booking.id }}</a></td>
+                                    <td>{{ booking.car.make }} {{ booking.car.model }}</td>
+                                    <td>{{ booking.start_date.strftime('%Y-%m-%d') }} to {{ booking.end_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>₹{{ "%.2f"|format(booking.total_price) }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if booking.status == 'completed' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                            {{ booking.status|title }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No bookings found for this user.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cogs"></i> Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if user.is_active %}
+                        <form method="POST" action="{{ url_for('admin.toggle_user_active', user_id=user.id) }}">
+                            <button type="submit" class="btn btn-warning w-100" onclick="return confirm('Deactivate user {{ user.username }}?')">
+                                <i class="fas fa-ban"></i> Deactivate User
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('admin.toggle_user_active', user_id=user.id) }}">
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('Activate user {{ user.username }}?')">
+                                <i class="fas fa-check"></i> Activate User
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    <form method="POST" action="{{ url_for('admin.delete_user', user_id=user.id) }}">
+                        <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Delete user {{ user.username }}? This cannot be undone.')">
+                            <i class="fas fa-trash"></i> Delete User
+                        </button>
+                    </form>
+
+                    {% if user.rc_document and not user.rc_document.is_verified %}
+                    <form method="POST" action="{{ url_for('admin.verify_document', document_id=user.rc_document.id) }}">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-check-circle"></i> Verify RC
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if user.dl_document and not user.dl_document.is_verified %}
+                    <form method="POST" action="{{ url_for('admin.verify_document', document_id=user.dl_document.id) }}">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-check-circle"></i> Verify DL
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,377 @@
+<!-- templates/user/dashboard.html -->
+{% extends "user/base.html" %}
+
+{% block title %}User Dashboard{% endblock %}
+{% block page_title %}Welcome, {{ user.username }}!{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- User Info & Stats -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user-circle"></i> My Profile</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Username:</strong> {{ user.username }}</p>
+                        <p><strong>Email:</strong> {{ user.email }}</p>
+                        <p><strong>Phone:</strong> {{ user.phone or 'Not provided' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Member Since:</strong> {{ user.created_at.strftime('%Y-%m-%d') }}</p>
+                        <p><strong>Status:</strong>
+                            <span class="badge bg-{% if user.is_active %}success{% else %}secondary{% endif %}">
+                                {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </p>
+                        {% if user.is_admin %}
+                        <p><strong>Role:</strong> <span class="badge bg-danger">Administrator</span></p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <a href="{{ url_for('user.profile') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Trips -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-car"></i> Upcoming Trips</h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming_bookings %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Booking ID</th>
+                                <th>Car</th>
+                                <th>Start Date & Time</th>
+                                <th>Status</th>
+                                <th>Time Until Pickup/Dropoff</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in upcoming_bookings %}
+                            {% set booking = item.booking %}
+                            {% set enable_start_button = item.enable_start_button %}
+                            <tr>
+                                <td>#{{ booking.id }}</td>
+                                <td>{{ booking.car.make }} {{ booking.car.model }}</td>
+                                <td>{{ booking.start_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <span class="badge bg-{% if booking.status == 'completed' %}success
+                                                        {% elif booking.status == 'active' %}info
+                                                        {% elif booking.status == 'paid' %}primary
+                                                        {% elif booking.status == 'approved' %}secondary
+                                                        {% elif booking.status == 'pending' %}warning
+                                                        {% elif booking.status == 'cancelled' %}danger
+                                                        {% else %}light{% endif %}">
+                                        {{ booking.status|title }}
+                                    </span>
+                                </td>
+                                <td id="countdown-{{ booking.id }}">Calculating...</td>
+                                <td>
+                                    <!-- Start Trip Button (Conditional) -->
+                                    {% if booking.status == 'paid' %}
+                                        <button id="start-btn-{{ booking.id }}"
+                                                class="btn btn-sm btn-{% if enable_start_button %}success{% else %}secondary{% endif %} {% if not enable_start_button %}disabled{% endif %}"
+                                                {% if not enable_start_button %}disabled{% endif %}
+                                                onclick="startTrip({{ booking.id }})">
+                                            <i class="fas fa-play"></i> Start Trip
+                                        </button>
+                                    {% elif booking.status == 'active' %}
+                                        <button id="complete-btn-{{ booking.id }}"
+                                                class="btn btn-sm btn-info"
+                                                onclick="completeTrip({{ booking.id }})">
+                                            <i class="fas fa-flag-checkered"></i> Complete Trip
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-secondary disabled" disabled>
+                                            <i class="fas fa-ban"></i> No Action
+                                        </button>
+                                    {% endif %}
+                                    <a href="{{ url_for('user.booking_detail', booking_id=booking.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View Details
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('user.list_bookings') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-list"></i> View All Bookings
+                    </a>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No upcoming trips scheduled. <a href="{{ url_for('car.home') }}">Book a car now!</a></p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Widgets -->
+    <div class="col-lg-4">
+        <!-- --- WALLET WIDGET --- -->
+        {% include 'user/wallet/dashboard_widget.html' %}
+        <!-- --- END WALLET WIDGET --- -->
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bell"></i> Notifications</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted text-center">Your recent notifications will appear here.</p>
+                <div class="text-center">
+                    <a href="#" class="btn btn-sm btn-outline-secondary disabled">View All Notifications</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ... (previous HTML content remains the same) ... -->
+
+<!-- ... (previous HTML content remains the same) ... -->
+
+<!-- ... (HTML content before the <script> tag remains unchanged) ... -->
+
+<!-- ... (HTML content before the <script> tag remains unchanged) ... -->
+
+<script>
+// --- CRITICAL FIX: Robust Timer using Estimated Server Time ---
+
+// 1. Get initial server time from the template context (when page loaded)
+// This is passed from the Python route via context['server_time']
+const SERVER_TIME_ISO = "{{ server_time.isoformat() }}"; // Get server time as ISO string from Flask context
+const serverStartTime = new Date(SERVER_TIME_ISO); // Convert to JS Date object (server time)
+
+// 2. Get initial client time (when page loaded)
+const clientStartTime = new Date(); // Current client time when page loaded
+
+// 3. Calculate the initial offset (Server Time - Client Time) in milliseconds
+// This represents how far ahead (+) or behind (-) the server time is compared to the client time
+const initialTimeOffset = serverStartTime.getTime() - clientStartTime.getTime();
+
+// --- CRITICAL FIX 2: Generate URL Templates on Client Side ---
+// Use url_for with a dummy integer (e.g., 0) to get the base path, then replace the dummy ID with a placeholder string.
+// This avoids the int() error that occurs when using a non-integer placeholder directly in url_for.
+const startTripUrlBase = "{{ url_for('user.start_trip', booking_id=0) }}".replace('/0/', '/__BOOKING_ID__/');
+const completeTripUrlBase = "{{ url_for('user.complete_trip', booking_id=0) }}".replace('/0/', '/__BOOKING_ID__/');
+// --- END CRITICAL FIX 2 ---
+
+// Function to calculate and update countdowns based on booking status
+// Uses the estimated server time for robustness
+function updateCountdowns() {
+    // 4. Calculate Estimated Server Time
+    // Get the *current* client time
+    const currentClientTime = new Date();
+    // Add the initial offset to get an estimated server time
+    const estimatedServerTime = new Date(currentClientTime.getTime() + initialTimeOffset);
+
+    // --- CRITICAL FIX: Process each booking ---
+    // The following block is generated multiple times by Jinja2, once for each booking item.
+    // Each iteration handles the logic for a single booking identified by its unique ID.
+    {% for item in upcoming_bookings %}
+        {% set booking = item.booking %}
+        // --- Process Booking ID: {{ booking.id }} ---
+
+        // Get DOM elements for this specific booking
+        // Use unique variable names for elements to avoid potential conflicts if IDs are duplicated
+        const countdownElement_{{ booking.id }} = document.getElementById('countdown-{{ booking.id }}');
+        const startButton_{{ booking.id }} = document.getElementById('start-btn-{{ booking.id }}');
+        const completeButton_{{ booking.id }} = document.getElementById('complete-btn-{{ booking.id }}');
+
+        // Check if the primary countdown element exists
+        if (!countdownElement_{{ booking.id }}) {
+            console.error(`Countdown element not found for booking ID: {{ booking.id }}`);
+            // Skip processing this booking if the element is missing
+            // In a standard JS loop, 'continue;' would be correct. Here, we mimic it by exiting the block.
+            // However, exiting the entire function is too harsh. Let's just skip the rest of this block's logic.
+            // We can't easily use 'continue;' as there's no explicit JS loop surrounding this generated block.
+            // Let's just proceed carefully, assuming missing elements are logged.
+             // Do nothing, let the rest of the logic handle potential undefined elements gracefully or error later.
+        } else { // Only process if the element exists
+
+            // --- CRITICAL FIX 3: Correctly Define Booking Dates for this Iteration ---
+            // Create Date objects directly from Jinja2-rendered and JS-formatted strings.
+            // Use strftime format and replace space with 'T' for ISO string compatibility.
+            // Ensure the format matches the Python datetime object's output.
+            // Assign to uniquely named variables for this booking's scope to prevent conflicts.
+            const bookingStartTime_{{ booking.id }} = new Date('{{ booking.start_date.strftime("%Y-%m-%d %H:%M:%S") }}'.replace(' ', 'T'));
+            const bookingEndTime_{{ booking.id }} = new Date('{{ booking.end_date.strftime("%Y-%m-%d %H:%M:%S") }}'.replace(' ', 'T'));
+            // --- END CRITICAL FIX 3 ---
+
+            // --- CRITICAL FIX 4: Define Booking Status for this Iteration ---
+            // Define booking status directly from the Jinja2 template variable for this iteration.
+            // Assign to a uniquely named variable for this booking's scope to prevent conflicts.
+            const bookingStatus_{{ booking.id }} = "{{ booking.status }}";
+            // --- END CRITICAL FIX 4 ---
+
+            // Determine the target time based on status and handle different states
+            let targetTime_{{ booking.id }} = null;
+            let statusText_{{ booking.id }} = '';
+            let shouldShowCountdown_{{ booking.id }} = true;
+
+            // --- CRITICAL FIX 5: Use the Locally Scoped Status Variable ---
+            if (bookingStatus_{{ booking.id }} === 'paid') {
+                targetTime_{{ booking.id }} = bookingStartTime_{{ booking.id }};
+                statusText_{{ booking.id }} = 'Until Pickup';
+            } else if (bookingStatus_{{ booking.id }} === 'active') {
+                targetTime_{{ booking.id }} = bookingEndTime_{{ booking.id }};
+                statusText_{{ booking.id }} = 'Until Dropoff';
+            } else if (bookingStatus_{{ booking.id }} === 'completed') {
+                countdownElement_{{ booking.id }}.textContent = 'Trip Completed';
+                shouldShowCountdown_{{ booking.id }} = false;
+            } else if (bookingStatus_{{ booking.id }} === 'cancelled') {
+                countdownElement_{{ booking.id }}.textContent = 'Trip Cancelled';
+                shouldShowCountdown_{{ booking.id }} = false;
+            } else if (bookingStatus_{{ booking.id }} === 'pending') {
+                 countdownElement_{{ booking.id }}.textContent = 'Trip Pending';
+                 shouldShowCountdown_{{ booking.id }} = false;
+            } else {
+                // For other statuses like 'approved' if they have a start time
+                targetTime_{{ booking.id }} = bookingStartTime_{{ booking.id }};
+                statusText_{{ booking.id }} = 'Until Start';
+            }
+            // --- END CRITICAL FIX 5 ---
+
+            // Check if the target time is valid
+            if (shouldShowCountdown_{{ booking.id }} && isNaN(targetTime_{{ booking.id }}.getTime())) {
+                countdownElement_{{ booking.id }}.textContent = 'Invalid Date';
+                console.error(`Invalid date for booking ID: {{ booking.id }} (Status: {{ booking.status }})`);
+                // Optionally disable buttons if date is invalid
+                if (startButton_{{ booking.id }}) {
+                    startButton_{{ booking.id }}.disabled = true;
+                    startButton_{{ booking.id }}.classList.add('disabled', 'btn-secondary');
+                    startButton_{{ booking.id }}.classList.remove('btn-success');
+                }
+                if (completeButton_{{ booking.id }}) {
+                    completeButton_{{ booking.id }}.disabled = true;
+                    completeButton_{{ booking.id }}.classList.add('disabled', 'btn-secondary');
+                    completeButton_{{ booking.id }}.classList.remove('btn-info');
+                }
+                // Mimic 'continue;' by skipping the rest of the logic for this booking block
+                // Do nothing, let the block end naturally.
+            } else if (shouldShowCountdown_{{ booking.id }}) { // Only proceed if status requires countdown and date is valid
+
+                // Calculate and display countdown if target time is valid and status requires it
+                // 5. Use Estimated Server Time for calculation
+                const timeDiff_{{ booking.id }} = targetTime_{{ booking.id }} - estimatedServerTime; // Use estimated server time
+
+                if (timeDiff_{{ booking.id }} > 0) {
+                    const seconds_{{ booking.id }} = Math.floor((timeDiff_{{ booking.id }} / 1000) % 60);
+                    const minutes_{{ booking.id }} = Math.floor((timeDiff_{{ booking.id }} / (1000 * 60)) % 60);
+                    const hours_{{ booking.id }} = Math.floor((timeDiff_{{ booking.id }} / (1000 * 60 * 60)) % 24);
+                    const days_{{ booking.id }} = Math.floor(timeDiff_{{ booking.id }} / (1000 * 60 * 60 * 24));
+
+                    let countdownText_{{ booking.id }} = '';
+                    if (days_{{ booking.id }} > 0) {
+                        countdownText_{{ booking.id }} = `${days_{{ booking.id }}}d ${hours_{{ booking.id }}}h ${minutes_{{ booking.id }}}m`;
+                    } else if (hours_{{ booking.id }} > 0) {
+                        countdownText_{{ booking.id }} = `${hours_{{ booking.id }}}h ${minutes_{{ booking.id }}}m ${seconds_{{ booking.id }}}s`;
+                    } else {
+                        countdownText_{{ booking.id }} = `${minutes_{{ booking.id }}}m ${seconds_{{ booking.id }}}s`;
+                    }
+
+                    countdownElement_{{ booking.id }}.textContent = `${countdownText_{{ booking.id }}} (${statusText_{{ booking.id }}})`;
+                } else {
+                    // Target time has passed (based on estimated server time)
+                    // --- CRITICAL FIX 6: Use the Locally Scoped Status Variable ---
+                    if (bookingStatus_{{ booking.id }} === 'paid') {
+                        countdownElement_{{ booking.id }}.textContent = 'Ready to Start';
+                        // --- CRITICAL FIX 9: Ensure Button is Enabled for 'Ready to Start' ---
+                        // Explicitly enable the start button if the status is 'paid' and time has passed
+                        if (startButton_{{ booking.id }}) {
+                             startButton_{{ booking.id }}.disabled = false; // Enable the button
+                             startButton_{{ booking.id }}.classList.remove('btn-secondary', 'disabled'); // Remove disabled classes
+                             startButton_{{ booking.id }}.classList.add('btn-success'); // Add success class
+                        }
+                        // --- END CRITICAL FIX 9 ---
+                    } else if (bookingStatus_{{ booking.id }} === 'active') {
+                        countdownElement_{{ booking.id }}.textContent = 'Trip Ongoing';
+                    } else {
+                        countdownElement_{{ booking.id }}.textContent = 'Time Passed';
+                    }
+                    // --- END CRITICAL FIX 6 ---
+                }
+
+                // Update button states based on status and time (using estimated server time)
+                // Only update if not already handled by the 'Ready to Start' logic above
+                if (startButton_{{ booking.id }} && !startButton_{{ booking.id }}.classList.contains('btn-success')) {
+                    startButton_{{ booking.id }}.disabled = true; // Default to disabled
+                    startButton_{{ booking.id }}.classList.remove('btn-success', 'btn-secondary'); // Reset classes
+                    startButton_{{ booking.id }}.classList.add('btn-secondary', 'disabled'); // Default class
+
+                    // --- CRITICAL FIX 7: Use the Locally Scoped Status Variable ---
+                    if (bookingStatus_{{ booking.id }} === 'paid') {
+                        // Check if within 1 hour (3600000 ms) of pickup time using estimated server time
+                        const timeToStart_{{ booking.id }} = bookingStartTime_{{ booking.id }} - estimatedServerTime; // Use estimated server time
+                        const enableStartButton_{{ booking.id }} = timeToStart_{{ booking.id }} <= 3600000 && timeToStart_{{ booking.id }} > 0;
+                        if (enableStartButton_{{ booking.id }}) {
+                            startButton_{{ booking.id }}.disabled = false;
+                            startButton_{{ booking.id }}.classList.remove('btn-secondary', 'disabled');
+                            startButton_{{ booking.id }}.classList.add('btn-success');
+                        }
+                    }
+                    // --- END CRITICAL FIX 7 ---
+                }
+
+                if (completeButton_{{ booking.id }}) {
+                    completeButton_{{ booking.id }}.disabled = true; // Default to disabled
+                    completeButton_{{ booking.id }}.classList.remove('btn-info', 'btn-secondary'); // Reset classes
+                    completeButton_{{ booking.id }}.classList.add('btn-secondary', 'disabled'); // Default class
+
+                    // --- CRITICAL FIX 8: Use the Locally Scoped Status Variable ---
+                    if (bookingStatus_{{ booking.id }} === 'active') {
+                        // Enable complete button if status is active
+                        completeButton_{{ booking.id }}.disabled = false;
+                        completeButton_{{ booking.id }}.classList.remove('btn-secondary', 'disabled');
+                        completeButton_{{ booking.id }}.classList.add('btn-info');
+                    }
+                    // --- END CRITICAL FIX 8 ---
+                }
+
+            } // End if (shouldShowCountdown && valid date) else block
+        } // End if (countdownElement exists) check
+        // --- End Process Booking ID: {{ booking.id }} ---
+    {% endfor %} // End of Jinja2 loop (This comment is just for clarity, not part of the generated JS)
+    // --- END CRITICAL FIX ---
+}
+
+// Call updateCountdowns immediately and then every second
+updateCountdowns();
+setInterval(updateCountdowns, 1000);
+
+// --- CRITICAL FIX 2: Update the startTrip function to use the pre-generated URL base ---
+// Navigate to the new start trip page using Flask's url_for and replace the placeholder
+// Use a placeholder string that is NOT an integer, e.g., '__BOOKING_ID__'
+function startTrip(bookingId) {
+    const url = startTripUrlBase.replace('__BOOKING_ID__', bookingId);
+    window.location.href = url;
+}
+// --- END CRITICAL FIX 2 ---
+
+// --- CRITICAL FIX 2: Update the completeTrip function to use the pre-generated URL base ---
+// Navigate to the new complete trip page using Flask's url_for and replace the placeholder
+// Use a placeholder string that is NOT an integer, e.g., '__BOOKING_ID__'
+function completeTrip(bookingId) {
+    const url = completeTripUrlBase.replace('__BOOKING_ID__', bookingId);
+    window.location.href = url;
+}
+// --- END CRITICAL FIX 2 ---
+
+// --- Debugging Output ---
+console.log("Server Time (ISO format):", SERVER_TIME_ISO);
+// --- END Debugging Output ---
+</script>
+{% endblock %}

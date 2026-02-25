@@ -1,0 +1,65 @@
+{% extends "user/base.html" %}
+
+{% block title %}Pay for Booking #{{ booking.id }}{% endblock %}
+{% block page_title %}Payment for Booking #{{ booking.id }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-credit-card"></i> Payment Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6>Booking Summary</h6>
+                        <p><strong>{{ booking.car.make }} {{ booking.car.model }}</strong></p>
+                        <p>{{ booking.start_date.strftime('%Y-%m-%d') }} to {{ booking.end_date.strftime('%Y-%m-%d') }}</p>
+                        <p>{{ booking.duration_days }} days</p>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <h6>Amount to Pay</h6>
+                        <h3 class="text-primary">₹{{ "%.2f"|format(booking.total_price) }}</h3>
+                    </div>
+                </div>
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Payment Method</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment_method" id="credit_card" value="credit_card" checked>
+                            <label class="form-check-label" for="credit_card">
+                                <i class="fab fa-cc-visa me-1"></i> Credit/Debit Card
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment_method" id="upi" value="upi">
+                            <label class="form-check-label" for="upi">
+                                <i class="fas fa-mobile-alt me-1"></i> UPI
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment_method" id="net_banking" value="net_banking">
+                            <label class="form-check-label" for="net_banking">
+                                <i class="fas fa-university me-1"></i> Net Banking
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> This is a simulation. In a real application, you would be redirected to a payment gateway.
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('user.booking_detail', booking_id=booking.id) }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-lock"></i> Pay ₹{{ "%.2f"|format(booking.total_price) }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

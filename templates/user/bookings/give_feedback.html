@@ -1,0 +1,98 @@
+<!-- templates/user/bookings/give_feedback.html -->
+{% extends "user/base.html" %}
+
+{% block title %}Give Feedback - Booking #{{ booking.id }}{% endblock %}
+{% block page_title %}Give Feedback{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-comment-dots"></i> Feedback for Booking #{{ booking.id }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>Car:</strong> {{ booking.car.make }} {{ booking.car.model }}</p>
+                        <p><strong>Start Date & Time:</strong> {{ booking.start_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                        <p><strong>End Date & Time:</strong> {{ booking.end_date.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Total Price:</strong> ₹{{ "%.2f"|format(booking.total_price) }}</p>
+                        <p><strong>Status:</strong>
+                            <span class="badge bg-{% if booking.status == 'completed' %}success
+                                                {% elif booking.status == 'active' %}info
+                                                {% elif booking.status == 'paid' %}primary
+                                                {% elif booking.status == 'approved' %}secondary
+                                                {% elif booking.status == 'pending' %}warning
+                                                {% elif booking.status == 'cancelled' %}danger
+                                                {% else %}light{% endif %}">
+                                {{ booking.status|title }}
+                            </span>
+                        </p>
+                        <p><strong>Payment Status:</strong> {{ booking.payment_status|title }}</p>
+                    </div>
+                </div>
+
+                <form method="POST">
+                    <!-- CSRF Token -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="mb-3">
+                        <label for="rating" class="form-label">Rating (1-5 stars)</label>
+                        <div class="rating-stars">
+                            {% for i in range(1, 6) %}
+                            <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" required/>
+                            <label for="star{{ i }}" class="fas fa-star"></label>
+                            {% endfor %}
+                        </div>
+                        <div class="form-text">Please select a star rating.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="feedback" class="form-label">Your Feedback</label>
+                        <textarea class="form-control" id="feedback" name="feedback" rows="4" placeholder="Share your experience with the host and car..." required></textarea>
+                        <div class="form-text">Please provide detailed feedback (max 500 characters).</div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('user.booking_detail', booking_id=booking.id) }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-paper-plane"></i> Submit Feedback
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Basic star rating CSS */
+    .rating-stars {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+    }
+
+    .rating-stars input[type="radio"] {
+        display: none;
+    }
+
+    .rating-stars label {
+        color: #ddd;
+        font-size: 2em;
+        padding: 0 0.1em;
+        cursor: pointer;
+    }
+
+    .rating-stars label:hover,
+    .rating-stars label:hover ~ label,
+    .rating-stars input[type="radio"]:checked ~ label {
+        color: #ffc107; /* Bootstrap warning color for gold stars */
+    }
+</style>
+{% endblock %}

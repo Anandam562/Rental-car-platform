@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Booking Confirmation - ZoomCar Clone{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0"><i class="fas fa-check-circle"></i> Booking Confirmed!</h3>
+            </div>
+            <div class="card-body text-center">
+                <i class="fas fa-calendar-check fa-4x text-success mb-3"></i>
+                <h4>Thank you for your booking!</h4>
+                <p class="text-muted">Booking ID: #{{ booking.id }}</p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="border rounded p-3">
+                            <h5>{{ booking.car.make }} {{ booking.car.model }}</h5>
+                            <p class="text-muted">{{ booking.car.year }}</p>
+                            <p>₹{{ "%.2f"|format(booking.car.price_per_day) }} per day</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="border rounded p-3">
+                            <h5>Dates</h5>
+                            <p><i class="fas fa-calendar-start"></i> {{ booking.start_date.strftime('%Y-%m-%d') }}</p>
+                            <p><i class="fas fa-calendar-end"></i> {{ booking.end_date.strftime('%Y-%m-%d') }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h3 class="text-primary">Total Amount: ₹{{ "%.2f"|format(booking.total_price) }}</h3>
+                </div>
+                
+                <div class="mt-4">
+                    <p class="text-muted">
+                        Your booking is confirmed. You will receive a confirmation email shortly.
+                    </p>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{{ url_for('booking.my_bookings') }}" class="btn btn-primary">
+                        <i class="fas fa-calendar"></i> View All Bookings
+                    </a>
+                    <a href="{{ url_for('car.home') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

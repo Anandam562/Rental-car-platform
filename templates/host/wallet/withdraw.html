@@ -1,0 +1,68 @@
+<!-- templates/host/wallet/withdraw.html -->
+{% extends "host/base.html" %}
+
+{% block title %}Withdraw Funds{% endblock %}
+{% block page_title %}Withdraw Funds{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="fas fa-minus-circle"></i> Withdraw Money from Wallet</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Enter the amount you wish to withdraw from your wallet.</p>
+                <p class="text-muted"><strong>Current Balance:</strong> ₹{{ "%.2f"|format(host.wallet_balance) }}</p>
+
+                {% if bank_accounts %}
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Amount (₹)</label>
+                        <input type="number" step="0.01" min="0.01" max="{{ host.wallet_balance }}" class="form-control" id="amount" name="amount" placeholder="Enter amount" required>
+                        <div class="form-text">Available balance: ₹{{ "%.2f"|format(host.wallet_balance) }}. Minimum withdrawal amount is ₹0.01.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="account_id" class="form-label">Select Bank Account</label>
+                        <select class="form-select" id="account_id" name="account_id" required>
+                            <option value="">Choose an account...</option>
+                            {% for account in bank_accounts %}
+                            <option value="{{ account.id }}" {% if account.is_primary %}selected{% endif %}>
+                                {{ account.bank_name }} ({{ account.mask_account_number() }}) {% if account.is_primary %}(Primary){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Select the bank account to which you want to withdraw funds.</div>
+                        <a href="{{ url_for('host.list_bank_accounts') }}" class="btn btn-sm btn-outline-secondary mt-2">
+                            <i class="fas fa-plus"></i> Add/Manage Bank Accounts
+                        </a>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-paper-plane"></i> Request Withdrawal
+                        </button>
+                        <a href="{{ url_for('host.wallet') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+                {% else %}
+                <p class="text-muted">You need to link at least one bank account before you can withdraw funds.</p>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('host.add_bank_account') }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Add Bank Account
+                    </a>
+                    <a href="{{ url_for('host.wallet') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Wallet
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

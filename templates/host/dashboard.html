@@ -1,0 +1,137 @@
+{% extends "host/base.html" %}
+
+{% block title %}Host Dashboard{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Stats Cards -->
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-car"></i> Total Cars</h5>
+                <h2>{{ total_cars }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-calendar-check"></i> Active Bookings</h5>
+                <h2>{{ active_bookings }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-rupee-sign"></i> Total Earnings</h5>
+                <h2>₹{{ "%.2f"|format(total_earnings) }}</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-star"></i> Average Rating</h5>
+                <h2>
+                    {% if host.ratings %}
+                        {{ "%.1f"|format(host.ratings|sum(attribute='rating') / host.ratings|length) }}
+                    {% else %}
+                        0.0
+                    {% endif %}
+                </h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Bookings -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Bookings</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_bookings %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Booking ID</th>
+                                    <th>Car</th>
+                                    <th>User</th>
+                                    <th>Dates</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in recent_bookings %}
+                                <tr>
+                                    <td>#{{ booking.id }}</td>
+                                    <td>{{ booking.car.make }} {{ booking.car.model }}</td>
+                                    <td>{{ booking.user.username }}</td>
+                                    <td>{{ booking.start_date.strftime('%Y-%m-%d') }} to {{ booking.end_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>₹{{ "%.2f"|format(booking.total_price) }}</td>
+                                    <td>
+                                        <span class="badge bg-{% if booking.status == 'confirmed' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                                            {{ booking.status|title }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">No bookings yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('host.add_car') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add New Car
+                    </a>
+                    <a href="{{ url_for('host.list_cars') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-car"></i> Manage Cars
+                    </a>
+                    <a href="{{ url_for('host.list_payments') }}" class="btn btn-outline-success">
+                        <i class="fas fa-money-bill-wave"></i> View Payments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-line"></i> Performance</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Your hosting performance metrics will appear here.</p>
+                <div class="progress">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 85%">85%</div>
+                </div>
+                <small class="text-muted">Profile completion</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

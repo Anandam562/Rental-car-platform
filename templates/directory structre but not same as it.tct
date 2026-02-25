@@ -1,0 +1,126 @@
+zoomcar_clone/
+│
+├── app.py                          # Main Flask application factory
+├── config.py                       # Configuration settings
+├── requirements.txt                # Python dependencies
+├── .env                            # Environment variables
+├── init_data.py                    # Script to initialize sample data
+│
+├── models/                         # Database models
+│   ├── __init__.py                 # Initialize db, import all models
+│   ├── user.py                     # User model (customer)
+│   ├── host.py                     # Host model (owner)
+│   ├── car.py                      # Car model
+│   ├── location.py                 # Location model
+│   ├── booking.py                  # Booking model
+│   ├── car_image.py                # Car images model
+│   └── payment.py                  # Payment model (if separate from Booking)
+│
+├── routes/                         # Route handlers (Blueprints)
+│   ├── __init__.py
+│   ├── auth.py                     # General authentication routes (login, register for users/customers)
+│   ├── car.py                      # Main car listing/search routes (`car_bp`)
+│   ├── booking.py                  # General booking routes (user/customer booking flow)
+│   ├── api.py                      # General API endpoints
+│   │
+│   ├── host/                       # Host-specific routes (`host_bp`)
+│   │   ├── __init__.py             # Initialize host blueprint
+│   │   ├── auth.py                 # Host authentication routes (login, register for hosts)
+│   │   ├── dashboard.py            # Host dashboard overview
+│   │   ├── cars.py                 # Host car management (add, edit, delete, list own cars)
+│   │   ├── bookings.py             # Host booking management (approve, manage bookings for own cars)
+│   │   ├── payments.py             # Host payment tracking/history
+│   │   ├── analytics.py            # Host ratings, feedbacks, performance
+│   │   └── profile.py              # Host profile management, wallet
+│   │
+│   └── user/                       # User-specific routes (`user_bp`) - Optional, can use main auth/booking
+│       ├── __init__.py             # Initialize user blueprint (if separate)
+│       ├── dashboard.py            # User dashboard overview (bookings, profile link)
+│       ├── bookings.py             # User booking management (view, cancel own bookings)
+│       └── profile.py              # User profile management
+│
+├── controllers/                    # Business logic (optional, can be in routes)
+│   ├── __init__.py
+│   ├── auth_controller.py          # Auth logic
+│   ├── car_controller.py           # Car search/filter logic
+│   ├── booking_controller.py       # Booking flow logic
+│   │
+│   ├── host/                       # Host-specific controllers
+│   │   ├── __init__.py
+│   │   ├── car_manager.py         # Logic for host adding/editing cars
+│   │   ├── booking_manager.py     # Logic for host managing bookings
+│   │   └── analytics.py           # Logic for host ratings/feedbacks
+│   │
+│   └── user/                       # User-specific controllers
+│       ├── __init__.py
+│       ├── booking_manager.py      # Logic for user creating/viewing bookings
+│       └── profile_manager.py     # Logic for user profile updates
+│
+├── utils/                          # Utility functions
+│   ├── __init__.py
+│   ├── distance_calculator.py     # Haversine distance calculation
+│   ├── geocoder.py                # Wrapper for Nominatim/OpenCage/etc. geocoding (future)
+│   └── validators.py              # Input validation helpers
+│
+├── templates/                      # HTML templates
+│   ├── base.html                  # Main base template
+│   ├── home.html                  # Homepage
+│   ├── car_list.html              # Main car listing/search results page
+│   ├── car_detail.html            # Car detail page
+│   ├── login.html                 # General user/customer login page
+│   ├── register.html              # General user/customer register page
+│   ├── booking/                   # Booking flow templates
+│   │   ├── confirm.html
+│   │   ├── payment.html
+│   │   └── success.html
+│   │
+│   ├── host/                      # Host templates
+│   │   ├── base.html              # Host base template
+│   │   ├── login.html             # Host login page
+│   │   ├── register.html          # Host register page
+│   │   ├── dashboard.html         # Host dashboard
+│   │   ├── cars/                  # Host car management templates
+│   │   │   ├── list.html
+│   │   │   ├── add.html           # Add car form (includes location details section)
+│   │   │   ├── edit.html
+│   │   │   └── detail.html
+│   │   ├── bookings/              # Host booking management templates
+│   │   │   ├── list.html
+│   │   │   └── detail.html
+│   │   ├── payments/              # Host payment templates
+│   │   │   └── list.html
+│   │   ├── analytics/             # Host analytics templates
+│   │   │   ├── ratings.html
+│   │   │   └── feedbacks.html
+│   │   └── profile/               # Host profile templates
+│   │       ├── view.html
+│   │       ├── edit.html
+│   │       └── wallet.html
+│   │
+│   └── user/                      # User templates (if separate from main)
+│       ├── base.html              # User base template
+│       ├── dashboard.html         # User dashboard
+│       ├── filter/                # User car search/filter templates
+│       │   ├── list.html          # Main user car listing page (results)
+│       │   └── filters_sidebar.html # Filter sidebar content (the updated one)
+│       ├── bookings/              # User booking templates
+│       │   ├── list.html
+│       │   ├── detail.html
+│       │   └── payment.html
+│       └── profile/               # User profile templates
+│           ├── view.html
+│           └── edit.html
+│
+├── static/                         # Static assets
+│   ├── css/
+│   │   ├── style.css              # Main stylesheet
+│   │   ├── host.css               # Host-specific styles
+│   │   └── user.css               # User-specific styles
+│   ├── js/
+│   │   ├── main.js                # Main JavaScript
+│   │   ├── host.js                # Host-specific JavaScript
+│   │   └── user.js                # User-specific JavaScript (includes filter logic)
+│   ├── images/                    # General images
+│   └── uploads/                   # Uploaded car images (created by app)
+│
+└── uploads/                        # Actual uploaded files directory (created by app)

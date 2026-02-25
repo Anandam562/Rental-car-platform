@@ -1,0 +1,62 @@
+<!-- templates/user/bookings/complete_trip.html -->
+{% extends "user/base.html" %}
+
+{% block title %}Complete Trip - Booking #{{ booking.id }}{% endblock %}
+{% block page_title %}Complete Your Trip{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0"><i class="fas fa-flag-checkered"></i> Upload Drop-off Photos</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">Please upload photos of the car after completing your trip.</p>
+
+                <div class="mb-4">
+                    <h5>Trip Details</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Booking ID:</strong> #{{ booking.id }}</li>
+                        <li class="list-group-item"><strong>Car:</strong> {{ booking.car.make }} {{ booking.car.model }} ({{ booking.car.year }})</li>
+                        <li class="list-group-item"><strong>Start Date & Time:</strong> {{ booking.start_date.strftime('%Y-%m-%d %H:%M') }} IST</li>
+                        <li class="list-group-item"><strong>End Date & Time:</strong> {{ booking.end_date.strftime('%Y-%m-%d %H:%M') }} IST</li>
+                        <li class="list-group-item"><strong>Total Price:</strong> ₹{{ "%.2f"|format(booking.total_price) }}</li>
+                        <li class="list-group-item"><strong>Status:</strong>
+                            <span class="badge bg-{% if booking.status == 'completed' %}success
+                                                {% elif booking.status == 'active' %}info
+                                                {% elif booking.status == 'paid' %}primary
+                                                {% elif booking.status == 'approved' %}secondary
+                                                {% elif booking.status == 'pending' %}warning
+                                                {% elif booking.status == 'cancelled' %}danger
+                                                {% else %}light{% endif %}">
+                                {{ booking.status|title }}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Photo Upload Form -->
+                <form method="POST" enctype="multipart/form-data">
+                    <!-- CSRF Token (Essential for security) -->
+                    <!-- Assuming manual CSRF token like in start_trip.html -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+
+                    <div class="mb-3">
+                        <label for="dropoff_photos" class="form-label">Upload Drop-off Photos (Max 10, Optional)</label>
+                        <input class="form-control" type="file" id="dropoff_photos" name="dropoff_photos" accept="image/*" multiple>
+                        <div class="form-text">Select up to 10 images showing the car's condition at drop-off. This step is optional but recommended.</div>
+                         <!-- Display form errors for the file field if needed -->
+                        <!-- You can add error display logic here if passed from the route -->
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('user.booking_detail', booking_id=booking.id) }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-info">Confirm Complete Trip</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

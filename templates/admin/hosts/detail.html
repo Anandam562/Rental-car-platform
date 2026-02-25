@@ -1,0 +1,189 @@
+<!-- templates/admin/hosts/detail.html -->
+{% extends "admin/base.html" %}
+
+{% block title %}Host Details - {{ host.company_name or host.user.username }}{% endblock %}
+{% block page_title %}Host Details: {{ host.company_name or host.user.username }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user-tie"></i> Host Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Host ID:</strong> #{{ host.id }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Associated User:</strong> {{ host.user.username }} ({{ host.user.email }})
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Company Name:</strong> {{ host.company_name or 'N/A' }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Phone:</strong> {{ host.phone or host.user.phone or 'N/A' }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Address:</strong> {{ host.address or 'N/A' }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Verification Status:</strong>
+                        {% if host.is_verified %}
+                            <span class="badge bg-success">Verified</span>
+                        {% else %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Wallet Balance:</strong> ₹{{ "%.2f"|format(host.wallet_balance) }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>User Status:</strong>
+                        {% if host.user.is_active %}
+                            <span class="badge bg-info">Active</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Joined:</strong> {{ host.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Cars Listed:</strong> {{ host.cars_managed|length }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-car"></i> Host's Cars</h5>
+            </div>
+            <div class="card-body">
+                {% if host.cars_managed %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Car ID</th>
+                                    <th>Make & Model</th>
+                                    <th>Year</th>
+                                    <th>Price/Day</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for car in host.cars_managed %}
+                                <tr>
+                                    <td>#{{ car.id }}</td>
+                                    <td>{{ car.make }} {{ car.model }}</td>
+                                    <td>{{ car.year }}</td>
+                                    <td>₹{{ "%.2f"|format(car.price_per_day) }}</td>
+                                    <td>
+                                        {% if car.is_available %}
+                                            <span class="badge bg-success">Available</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Unavailable</span>
+                                        {% endif %}
+                                        {% if car.is_blocked %}
+                                            <span class="badge bg-danger">Blocked</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('admin.car_detail', car_id=car.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        {% if car.is_blocked %}
+                                            <form method="POST" action="{{ url_for('admin.toggle_car_block', car_id=car.id) }}" class="d-inline">
+                                                <input type="hidden" name="reason" value="Unblocked by admin">
+                                                <button type="submit" class="btn btn-sm btn-outline-success" onclick="return confirm('Unblock car {{ car.make }} {{ car.model }}?')">
+                                                    <i class="fas fa-unlock"></i> Unblock
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <form method="POST" action="{{ url_for('admin.toggle_car_block', car_id=car.id) }}" class="d-inline">
+                                                <input type="hidden" name="reason" value="Blocked by admin">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Block car {{ car.make }} {{ car.model }}?')">
+                                                    <i class="fas fa-lock"></i> Block
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">This host has not listed any cars yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cogs"></i> Admin Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if host.is_verified %}
+                        <form method="POST" action="{{ url_for('admin.unverify_host', host_id=host.id) }}">
+                            <button type="submit" class="btn btn-warning w-100" onclick="return confirm('Unverify host {{ host.company_name or host.user.username }}?')">
+                                <i class="fas fa-times-circle"></i> Unverify Host
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('admin.verify_host', host_id=host.id) }}">
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('Verify host {{ host.company_name or host.user.username }}?')">
+                                <i class="fas fa-check-circle"></i> Verify Host
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    {% if host.user.is_active %}
+                        <form method="POST" action="{{ url_for('admin.toggle_user_active', user_id=host.user.id) }}"> <!-- Reuse existing user toggle -->
+                            <button type="submit" class="btn btn-danger w-100" onclick="return confirm('Deactivate user account for {{ host.user.username }}?')">
+                                <i class="fas fa-user-slash"></i> Deactivate User
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="POST" action="{{ url_for('admin.toggle_user_active', user_id=host.user.id) }}"> <!-- Reuse existing user toggle -->
+                            <button type="submit" class="btn btn-success w-100" onclick="return confirm('Activate user account for {{ host.user.username }}?')">
+                                <i class="fas fa-user-check"></i> Activate User
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    <a href="{{ url_for('admin.list_hosts') }}" class="btn btn-secondary w-100">
+                        <i class="fas fa-arrow-left"></i> Back to Hosts
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-wallet"></i> Wallet</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Balance:</strong> ₹{{ "%.2f"|format(host.wallet_balance) }}</p>
+                <a href="#" class="btn btn-sm btn-outline-primary disabled">View Transactions</a>
+                <a href="#" class="btn btn-sm btn-outline-success disabled">Add Funds</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

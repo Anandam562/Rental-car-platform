@@ -1,0 +1,134 @@
+<!-- templates/booking/initiate.html -->
+{% extends "base.html" %} <!-- Or your main base template -->
+
+{% block title %}Book {{ car.make }} {{ car.model }} - ZoomCar Clone{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="bg-white border rounded-2xl overflow-hidden shadow-sm p-6">
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">Book {{ car.make }} {{ car.model }} ({{ car.year }})</h1>
+
+        <!-- Car Info Summary (Optional) -->
+        <div class="mb-6 p-4 border rounded-lg bg-gray-50">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-gray-700"><strong>Transmission:</strong> {{ car.transmission }}</p>
+                    <p class="text-gray-700"><strong>Fuel Type:</strong> {{ car.fuel_type }}</p>
+                    <p class="text-gray-700"><strong>Seats:</strong> {{ car.seats }}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xl font-bold text-gray-900">₹{{ "%.2f"|format(car.price_per_hour) }}/hour</p>
+                </div>
+            </div>
+        </div>
+        <!-- End Car Info Summary -->
+
+        <!-- Booking Form -->
+        <div class="border rounded-xl p-4 bg-blue-50">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <i class="fas fa-calendar-alt text-primary"></i> Enter Booking Details
+            </h3>
+
+            <!-- CRITICAL FIX 2: Corrected the form action URL -->
+            <form id="bookingForm" method="POST" action="{{ url_for('booking.initiate_booking', car_id=car.id) }}">
+                 <!-- CRITICAL FIX: Manually Add CSRF Token -->
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <!-- END CRITICAL FIX -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="start_datetime" class="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
+                        <input type="datetime-local" id="start_datetime" name="start_datetime"
+                               class="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                               min="{{ default_start_datetime.strftime('%Y-%m-%dT%H:%M') if default_start_datetime else '' }}"
+                               value="{{ default_start_datetime.strftime('%Y-%m-%dT%H:%M') if default_start_datetime else '' }}" required>
+                    </div>
+                    <div>
+                        <label for="end_datetime" class="block text-sm font-medium text-gray-700 mb-1">End Date & Time</label>
+                        <input type="datetime-local" id="end_datetime" name="end_datetime"
+                               class="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                               min="{{ default_start_datetime.strftime('%Y-%m-%dT%H:%M') if default_start_datetime else '' }}"
+                               value="{{ default_end_datetime.strftime('%Y-%m-%dT%H:%M') if default_end_datetime else '' }}" required>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="flex justify-between items-center text-sm">
+                        <span>Duration (Hours):</span>
+                        <span id="numHours">0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm mt-1">
+                        <span>Price per Hour:</span>
+                        <span>₹{{ "%.2f"|format(car.price_per_hour) }}</span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="flex justify-between items-center font-semibold text-base">
+                        <span>Total Cost:</span>
+                        <span id="totalCost">₹0.00</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-primary text-white rounded-xl px-4 py-3 font-medium hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-credit-card mr-2"></i> Proceed to Payment
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startDateTimeInput = document.getElementById('start_datetime');
+    const endDateTimeInput = document.getElementById('end_datetime');
+    const numHoursSpan = document.getElementById('numHours');
+    const totalCostSpan = document.getElementById('totalCost');
+    const pricePerHour = {{ car.price_per_hour }}; // Use price_per_hour
+
+    function updateBookingDetails() {
+        const startDateTimeStr = startDateTimeInput.value;
+        const endDateTimeStr = endDateTimeInput.value;
+
+        if (startDateTimeStr && endDateTimeStr) {
+            const startDateTime = new Date(startDateTimeStr);
+            const endDateTime = new Date(endDateTimeStr);
+
+            if (endDateTime >= startDateTime) {
+                const timeDiff = endDateTime.getTime() - startDateTime.getTime();
+                const hoursDiff = timeDiff / (1000 * 3600); // Convert milliseconds to hours
+                const numHours = hoursDiff > 0 ? hoursDiff : 0.01; // Minimum e.g., 0.01 hours (36 seconds)
+
+                numHoursSpan.textContent = numHours.toFixed(2); // Display with 2 decimal places
+                const totalCost = numHours * pricePerHour;
+                totalCostSpan.textContent = `₹${totalCost.toFixed(2)}`; // Display with 2 decimal places
+            } else {
+                numHoursSpan.textContent = 'Invalid';
+                totalCostSpan.textContent = 'Invalid';
+            }
+        } else {
+             numHoursSpan.textContent = '0.00'; // Reset if inputs are empty
+             totalCostSpan.textContent = '₹0.00';
+        }
+    }
+
+    if (startDateTimeInput && endDateTimeInput) {
+        startDateTimeInput.addEventListener('change', updateBookingDetails);
+        endDateTimeInput.addEventListener('change', updateBookingDetails);
+        // Initialize on load
+        updateBookingDetails();
+    }
+
+    // Set minimum datetime for end datetime based on start datetime
+    if (startDateTimeInput) {
+        startDateTimeInput.addEventListener('change', function() {
+            if (endDateTimeInput) {
+                endDateTimeInput.min = this.value; // Set minimum to start datetime
+                // If end datetime is before new start datetime, reset it
+                if (new Date(endDateTimeInput.value) < new Date(this.value)) {
+                    endDateTimeInput.value = this.value;
+                }
+                updateBookingDetails();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

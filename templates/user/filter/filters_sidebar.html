@@ -1,0 +1,267 @@
+<!-- templates/user/filter/filters_sidebar.html -->
+<div class="bg-white border rounded-2xl p-4 shadow-sm sticky top-24">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="font-semibold text-lg">Filters</h2>
+        <button id="resetFiltersSidebar" class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">
+            Reset
+        </button>
+    </div>
+
+    <!-- Filter Form -->
+    <form id="carFiltersForm" method="GET" action="{{ url_for('car.car_list') }}">
+        <!-- Pass through existing NON-FILTER search/location parameters -->
+        <!-- This ensures user_lat, user_lng, starts, ends are maintained -->
+        {% for key, value in request.args.items() %}
+            {% if key not in ['type', 'transmission', 'fuel', 'min_seats', 'max_seats', 'min_price', 'max_price', 'brand', 'min_year', 'features'] %}
+            <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endif %}
+        {% endfor %}
+
+        <!-- Car Type Filter -->
+        <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <i class="fas fa-car text-primary"></i> Car Type
+            </h3>
+            <div class="flex flex-wrap gap-2">
+                {% set car_types = ['SUV', 'Hatchback', 'Sedan', 'MUV', 'Luxury', 'EV'] %}
+                {% for type in car_types %}
+                <label class="cursor-pointer">
+                    <input type="checkbox" name="type" value="{{ type }}" class="hidden peer" {% if type in request.args.getlist('type') %}checked{% endif %}>
+                    <div class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300 peer-checked:bg-black peer-checked:text-white peer-checked:border-black transition-colors">
+                        {{ type }}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Transmission Filter -->
+        <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <i class="fas fa-cog text-primary"></i> Transmission
+            </h3>
+            <div class="flex flex-wrap gap-2">
+                {% set transmissions = ['Manual', 'Automatic'] %}
+                {% for trans in transmissions %}
+                <label class="cursor-pointer">
+                    <input type="checkbox" name="transmission" value="{{ trans }}" class="hidden peer" {% if trans in request.args.getlist('transmission') %}checked{% endif %}>
+                    <div class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300 peer-checked:bg-black peer-checked:text-white peer-checked:border-black transition-colors">
+                        {{ trans }}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Fuel Type Filter -->
+        <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <i class="fas fa-gas-pump text-primary"></i> Fuel Type
+            </h3>
+            <div class="flex flex-wrap gap-2">
+                {% set fuels = ['Petrol', 'Diesel', 'CNG', 'EV', 'Electric'] %}
+                {% for fuel in fuels %}
+                <label class="cursor-pointer">
+                    <input type="checkbox" name="fuel" value="{{ fuel }}" class="hidden peer" {% if fuel in request.args.getlist('fuel') %}checked{% endif %}>
+                    <div class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300 peer-checked:bg-black peer-checked:text-white peer-checked:border-black transition-colors">
+                        {{ fuel }}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Seating Capacity Filter -->
+        <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <i class="fas fa-users text-primary"></i> Seating Capacity
+            </h3>
+            <div class="flex items-center gap-3">
+                <input type="number" name="min_seats" min="2" max="20" value="{{ request.args.get('min_seats', '') }}" placeholder="Min" class="w-20 rounded-lg border px-2 py-1 text-sm">
+                <span class="text-sm text-gray-500">to</span>
+                <input type="number" name="max_seats" min="2" max="20" value="{{ request.args.get('max_seats', '') }}" placeholder="Max" class="w-20 rounded-lg border px-2 py-1 text-sm">
+            </div>
+        </div>
+
+        <!-- Price Range Filter -->
+        <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <i class="fas fa-rupee-sign text-primary"></i> Max Price (₹/day)
+            </h3>
+            <div class="space-y-2">
+                <input type="range" name="max_price_slider" min="500" max="5000" step="100" value="{{ request.args.get('max_price', '5000') }}"
+                       class="w-full price-slider h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                <div class="flex justify-between text-xs text-gray-600">
+                    <span>₹500</span>
+                    <span id="priceValue">Up to ₹{{ request.args.get('max_price', '5000') }}</span>
+                    <span>₹5000</span>
+                </div>
+                 <!-- Hidden input to capture the max price value for submission -->
+                 <!-- The name 'max_price' matches the filter class parameter -->
+                 <input type="hidden" name="max_price" id="maxPriceInput" value="{{ request.args.get('max_price', '5000') }}">
+                 <!-- Optional hidden min_price input if you add a min slider -->
+                 <input type="hidden" name="min_price" id="minPriceInput" value="0">
+            </div>
+        </div>
+
+        <!-- Brand Filter -->
+        <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <i class="fas fa-building text-primary"></i> Brand
+            </h3>
+            <div class="flex flex-wrap gap-2">
+                {% set brands = ['Maruti', 'Hyundai', 'Tata', 'Mahindra', 'Toyota', 'Honda', 'Ford', 'Volkswagen'] %}
+                {% for brand in brands %}
+                <label class="cursor-pointer">
+                    <input type="checkbox" name="brand" value="{{ brand }}" class="hidden peer" {% if brand in request.args.getlist('brand') %}checked{% endif %}>
+                    <div class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300 peer-checked:bg-black peer-checked:text-white peer-checked:border-black transition-colors">
+                        {{ brand }}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Model Year Filter -->
+        <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <i class="fas fa-calendar-alt text-primary"></i> Model Year
+            </h3>
+            <div class="flex flex-wrap gap-2">
+                 <!-- Use labels for user interaction -->
+                 {% set year_labels = ['2020+', '2021+', '2022+', '2023+'] %}
+                 {% for label in year_labels %}
+                 <label class="cursor-pointer">
+                     <input type="checkbox" name="min_year_label" value="{{ label }}" class="hidden peer" {% if label in request.args.getlist('min_year_label') %}checked{% endif %}>
+                     <div class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300 peer-checked:bg-black peer-checked:text-white peer-checked:border-black transition-colors">
+                         {{ label }}
+                     </div>
+                 </label>
+                 {% endfor %}
+            </div>
+            <!-- Hidden input to submit the actual year value -->
+            <input type="hidden" name="min_year" id="actual_min_year" value="{{ request.args.get('min_year', '') }}">
+        </div>
+
+        <!-- Features Filter -->
+        <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <i class="fas fa-star text-primary"></i> Features
+            </h3>
+            <div class="flex flex-wrap gap-2">
+                {% set features = ['ac', 'bluetooth', 'sunroof', 'gps'] %}
+                {% set feature_labels = {'ac': 'AC', 'bluetooth': 'Bluetooth', 'sunroof': 'Sunroof', 'gps': 'GPS'} %}
+                {% for feature in features %}
+                <label class="cursor-pointer">
+                    <input type="checkbox" name="features" value="{{ feature }}" class="hidden peer" {% if feature in request.args.getlist('features') %}checked{% endif %}>
+                    <div class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300 peer-checked:bg-black peer-checked:text-white peer-checked:border-black transition-colors">
+                        {{ feature_labels[feature] }}
+                    </div>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Apply Filters Button (Visible only on desktop sidebar) -->
+        <div class="hidden lg:block pt-2">
+            <button type="submit" class="w-full apply-filters-btn bg-primary text-white rounded-xl px-4 py-2 font-medium hover:bg-blue-600 transition-colors">
+                Apply Filters
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Price Slider Logic ---
+    const priceSlider = document.querySelector('input[name="max_price_slider"]');
+    const priceValue = document.getElementById('priceValue');
+    const maxPriceInput = document.getElementById('maxPriceInput');
+    // const minPriceInput = document.getElementById('minPriceInput'); // If using min slider
+
+    if (priceSlider) {
+        // Set initial value display
+        priceValue.textContent = `Up to ₹${priceSlider.value}`;
+        maxPriceInput.value = priceSlider.value;
+
+        priceSlider.addEventListener('input', function() {
+            priceValue.textContent = `Up to ₹${this.value}`;
+            maxPriceInput.value = this.value;
+            // For a true range, you'd also update minPriceInput based on another slider
+        });
+    }
+    // --- End Price Slider ---
+
+    // --- Model Year Filter Logic (Translate label to year) ---
+    const yearLabels = document.querySelectorAll('input[name="min_year_label"]');
+    const actualMinYearInput = document.getElementById('actual_min_year');
+
+    yearLabels.forEach(labelCheckbox => {
+        labelCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // Map label to year
+                let yearValue = '';
+                if (this.value === '2020+') yearValue = '2020';
+                else if (this.value === '2021+') yearValue = '2021';
+                else if (this.value === '2022+') yearValue = '2022';
+                else if (this.value === '2023+') yearValue = '2023';
+
+                if (yearValue) {
+                    actualMinYearInput.value = yearValue;
+                }
+            } else {
+                // If unchecked, clear the actual year input
+                // Only clear if no other year label is checked
+                let anyChecked = false;
+                yearLabels.forEach(cb => {
+                    if (cb !== this && cb.checked) {
+                        anyChecked = true;
+                        // Update to the checked one's value
+                        let yearVal = '';
+                        if (cb.value === '2020+') yearVal = '2020';
+                        else if (cb.value === '2021+') yearVal = '2021';
+                        else if (cb.value === '2022+') yearVal = '2022';
+                        else if (cb.value === '2023+') yearVal = '2023';
+
+                        if (yearVal) {
+                            actualMinYearInput.value = yearVal;
+                        }
+                    }
+                });
+                if (!anyChecked) {
+                     actualMinYearInput.value = '';
+                }
+            }
+        });
+    });
+    // --- End Model Year Filter Logic ---
+
+    // --- Reset Filters (Sidebar only) ---
+    const resetFiltersBtn = document.getElementById('resetFiltersSidebar');
+    const filterForm = document.getElementById('carFiltersForm');
+
+    if (resetFiltersBtn && filterForm) {
+        resetFiltersBtn.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent default button behavior
+            // Reset all form elements within the filter form
+            filterForm.reset();
+            // Specifically handle checkboxes if needed (some browsers don't reset them with .reset())
+            const checkboxes = filterForm.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = false);
+            // Reset slider display and hidden inputs
+            if (priceSlider) {
+                priceSlider.value = priceSlider.max;
+                priceValue.textContent = `Up to ₹${priceSlider.max}`;
+                maxPriceInput.value = priceSlider.max;
+                // minPriceInput.value = ''; // Or default min if range
+            }
+            // Reset year filter logic
+            actualMinYearInput.value = '';
+            yearLabels.forEach(cb => cb.checked = false);
+            // Submit the form to refresh results without filters
+            // filterForm.submit(); // Optional: uncomment to auto-submit on reset
+        });
+    }
+    // --- End Reset Filters ---
+});
+</script>

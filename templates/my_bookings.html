@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookings - ZoomCar Clone{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-calendar-check"></i> My Bookings</h2>
+    <a href="{{ url_for('car.home') }}" class="btn btn-outline-primary">
+        <i class="fas fa-car"></i> Book New Car
+    </a>
+</div>
+
+{% if bookings %}
+    <div class="row">
+        {% for booking in bookings %}
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title">{{ booking.car.make }} {{ booking.car.model }}</h5>
+                            <p class="text-muted">{{ booking.car.year }}</p>
+                        </div>
+                        <span class="badge bg-{% if booking.status == 'confirmed' %}success{% elif booking.status == 'pending' %}warning{% elif booking.status == 'cancelled' %}danger{% else %}secondary{% endif %}">
+                            {{ booking.status|title }}
+                        </span>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <small class="text-muted">Start Date</small>
+                            <p>{{ booking.start_date.strftime('%Y-%m-%d') }}</p>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">End Date</small>
+                            <p>{{ booking.end_date.strftime('%Y-%m-%d') }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="text-primary">₹{{ "%.2f"|format(booking.total_price) }}</h4>
+                            <small class="text-muted">Total Amount</small>
+                        </div>
+                        {% if booking.status == 'pending' %}
+                            <a href="{{ url_for('booking.cancel_booking', booking_id=booking.id) }}" 
+                               class="btn btn-outline-danger btn-sm"
+                               onclick="return confirm('Are you sure you want to cancel this booking?')">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-calendar fa-4x text-muted mb-3"></i>
+        <h4>No bookings yet</h4>
+        <p class="text-muted">Start by booking your first car</p>
+        <a href="{{ url_for('car.home') }}" class="btn btn-primary">
+            <i class="fas fa-car"></i> Book a Car
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

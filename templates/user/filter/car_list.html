@@ -1,0 +1,513 @@
+<!-- templates/car_list.html -->
+{% extends "base.html" %} <!-- Or your main base template -->
+
+{% block title %}Available Cars - ZoomCar Clone{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 px-4 sm:px-6 lg:px-8 py-4">
+    <!-- Filters Sidebar -->
+    <aside class="hidden lg:block lg:col-span-3">
+        <div class="bg-white border rounded-2xl p-4 shadow-sm sticky top-24">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="font-semibold text-lg">Filters</h2>
+                <a href="{{ url_for('car.car_list', **dict(request.args, user_lat=user_location.lat, user_lng=user_location.lng)) }}" class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200">
+                    Reset
+                </a>
+            </div>
+
+            <!-- Filter Form -->
+            <form id="carFiltersForm" method="GET" action="{{ url_for('car.car_list') }}">
+                <!-- Pass through existing NON-FILTER search/location parameters -->
+                <!-- This ensures user_lat, user_lng are maintained -->
+                {% for key, value in request.args.items() %}
+                    {% if key not in ['type', 'transmission', 'fuel', 'min_seats', 'max_seats', 'min_price', 'max_price', 'brand', 'min_year', 'features'] %}
+                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                    {% endif %}
+                {% endfor %}
+                <!-- Ensure user_lat and user_lng are always passed -->
+                <input type="hidden" name="user_lat" value="{{ user_location.lat }}">
+                <input type="hidden" name="user_lng" value="{{ user_location.lng }}">
+
+                <!-- Quick Picks (Placeholder - Add sort logic if needed) -->
+                <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <i class="fas fa-sliders-h text-primary"></i> Quick Picks
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        <!-- These links would apply specific filter combinations -->
+                        <a href="#" class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300">Top Rated</a>
+                        <a href="#" class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300">Price: Low to High</a>
+                        <a href="#" class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300">Price: High to Low</a>
+                        <a href="{{ url_for('car.car_list', user_lat=user_location.lat, user_lng=user_location.lng) }}" class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-black text-white border-black">Recommended</a>
+                    </div>
+                </div>
+
+                <!-- Car Type Filter -->
+                <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <i class="fas fa-car text-primary"></i> Car Type
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% set car_types = ['SUV', 'Hatchback', 'Sedan', 'MUV', 'Luxury', 'EV'] %}
+                        {% for type in car_types %}
+                        <label class="cursor-pointer">
+                            <input type="checkbox" name="type" value="{{ type }}" class="hidden peer" {% if type in active_filters.types %}checked{% endif %}>
+                            <div class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300 peer-checked:bg-black peer-checked:text-white peer-checked:border-black transition-colors">
+                                {{ type }}
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Transmission Filter -->
+                <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <i class="fas fa-cog text-primary"></i> Transmission
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% set transmissions = ['Manual', 'Automatic'] %}
+                        {% for trans in transmissions %}
+                        <label class="cursor-pointer">
+                            <input type="checkbox" name="transmission" value="{{ trans }}" class="hidden peer" {% if trans in active_filters.transmissions %}checked{% endif %}>
+                            <div class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300 peer-checked:bg-black peer-checked:text-white peer-checked:border-black transition-colors">
+                                {{ trans }}
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Fuel Type Filter -->
+                <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <i class="fas fa-gas-pump text-primary"></i> Fuel Type
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% set fuels = ['Petrol', 'Diesel', 'CNG', 'EV', 'Electric'] %}
+                        {% for fuel in fuels %}
+                        <label class="cursor-pointer">
+                            <input type="checkbox" name="fuel" value="{{ fuel }}" class="hidden peer" {% if fuel in active_filters.fuels %}checked{% endif %}>
+                            <div class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300 peer-checked:bg-black peer-checked:text-white peer-checked:border-black transition-colors">
+                                {{ fuel }}
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Seating Capacity Filter -->
+                <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <i class="fas fa-users text-primary"></i> Seating Capacity
+                    </h3>
+                    <div class="flex items-center gap-3">
+                        <input type="number" name="min_seats" min="2" max="20" value="{{ active_filters.min_seats or '' }}" placeholder="Min" class="w-20 rounded-lg border px-2 py-1 text-sm">
+                        <span class="text-sm text-gray-500">to</span>
+                        <input type="number" name="max_seats" min="2" max="20" value="{{ active_filters.max_seats or '' }}" placeholder="Max" class="w-20 rounded-lg border px-2 py-1 text-sm">
+                    </div>
+                </div>
+
+                <!-- Price Range Filter -->
+                <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <i class="fas fa-rupee-sign text-primary"></i> Max Price (₹/day)
+                    </h3>
+                    <div class="space-y-2">
+                        <input type="range" name="max_price_slider" min="500" max="5000" step="100" value="{{ active_filters.max_price or '5000' }}"
+                               class="w-full price-slider h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="flex justify-between text-xs text-gray-600">
+                            <span>₹500</span>
+                            <span id="priceValue">Up to ₹{{ active_filters.max_price or '5000' }}</span>
+                            <span>₹5000</span>
+                        </div>
+                         <!-- Hidden input to capture the max price value for submission -->
+                         <!-- The name 'max_price' matches the filter parameter -->
+                         <input type="hidden" name="max_price" id="maxPriceInput" value="{{ active_filters.max_price or '5000' }}">
+                         <!-- Optional hidden min_price input -->
+                         <input type="hidden" name="min_price" id="minPriceInput" value="{{ active_filters.min_price or '0' }}">
+                    </div>
+                </div>
+
+                <!-- Brand Filter -->
+                <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <i class="fas fa-building text-primary"></i> Brand
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% set brands = ['Maruti', 'Hyundai', 'Tata', 'Mahindra', 'Toyota', 'Honda', 'Ford', 'Volkswagen'] %}
+                        {% for brand in brands %}
+                        <label class="cursor-pointer">
+                            <input type="checkbox" name="brand" value="{{ brand }}" class="hidden peer" {% if brand in active_filters.brands %}checked{% endif %}>
+                            <div class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300 peer-checked:bg-black peer-checked:text-white peer-checked:border-black transition-colors">
+                                {{ brand }}
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Model Year Filter -->
+                <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <i class="fas fa-calendar-alt text-primary"></i> Model Year
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                         {% set years = ['2020', '2021', '2022', '2023'] %} <!-- Use actual years -->
+                         {% for year in years %}
+                         <label class="cursor-pointer">
+                             <input type="checkbox" name="min_year" value="{{ year }}" class="hidden peer" {% if active_filters.min_year == year %}checked{% endif %}> <!-- Use min_year for year filter -->
+                             <div class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300 peer-checked:bg-black peer-checked:text-white peer-checked:border-black transition-colors">
+                                 {{ year }}+
+                             </div>
+                         </label>
+                         {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Features Filter -->
+                <div class="filter-section mb-4 pb-4 border-b border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <i class="fas fa-star text-primary"></i> Features
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% set features = ['ac', 'bluetooth', 'sunroof', 'gps'] %}
+                        {% set feature_labels = {'ac': 'AC', 'bluetooth': 'Bluetooth', 'sunroof': 'Sunroof', 'gps': 'GPS'} %}
+                        {% for feature in features %}
+                        <label class="cursor-pointer">
+                            <input type="checkbox" name="features" value="{{ feature }}" class="hidden peer" {% if feature in active_filters.features %}checked{% endif %}>
+                            <div class="px-3 py-1.5 rounded-full border text-sm filter-chip bg-white hover:bg-gray-100 border-gray-300 peer-checked:bg-black peer-checked:text-white peer-checked:border-black transition-colors">
+                                {{ feature_labels[feature] }}
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Apply Filters Button -->
+                <div class="pt-2">
+                    <button type="submit" class="w-full apply-filters-btn bg-primary text-white rounded-xl px-4 py-2 font-medium hover:bg-blue-600 transition-colors">
+                        Apply Filters
+                    </button>
+                </div>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Results Section -->
+    <section class="lg:col-span-9 space-y-4">
+        <!-- Toolbar -->
+        <div class="bg-white border rounded-2xl p-3 shadow-sm flex flex-wrap items-center gap-2 justify-between">
+            <div class="flex items-center gap-2">
+                <button id="mobileFilterToggle" class="md:hidden inline-flex items-center gap-2 px-3 py-2 border rounded-xl">
+                    <i class="fas fa-filter"></i> Filters
+                </button>
+                <div class="text-sm text-gray-600">{{ cars|length }} cars found</div>
+            </div>
+            <div class="flex items-center gap-2">
+                <!-- Simple Sort Dropdown (Tailwind CSS only, no JS) -->
+                <div class="sort-dropdown relative">
+                    <button class="inline-flex items-center gap-2 border rounded-xl px-3 py-2 text-sm">
+                        <i class="fas fa-sort-amount-down"></i> Sort
+                        <i class="fas fa-chevron-down ml-1"></i>
+                    </button>
+                    <div class="sort-dropdown-content absolute right-0 top-full mt-1 w-48 bg-white border rounded-xl shadow-lg py-1 hidden z-10">
+                        <a href="?{{ request.args|urlencode }}&sort=recommended" class="block px-4 py-2 text-sm hover:bg-gray-100">Recommended</a>
+                        <a href="?{{ request.args|urlencode }}&sort=price_low_high" class="block px-4 py-2 text-sm hover:bg-gray-100">Price: Low to High</a>
+                        <a href="?{{ request.args|urlencode }}&sort=price_high_low" class="block px-4 py-2 text-sm hover:bg-gray-100">Price: High to Low</a>
+                        <a href="?{{ request.args|urlencode }}&sort=distance" class="block px-4 py-2 text-sm hover:bg-gray-100">Distance</a>
+                        <!-- Add more sort options -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applied Filters Tags -->
+        {% if active_filters.types or active_filters.transmissions or active_filters.fuels or
+              active_filters.brands or active_filters.features or active_filters.min_seats or
+              active_filters.max_seats or active_filters.min_price or active_filters.max_price or
+              active_filters.min_year %}
+        <div class="bg-white border rounded-2xl p-3 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-semibold text-gray-700">Applied Filters</h3>
+                <a href="{{ url_for('car.car_list', user_lat=user_location.lat, user_lng=user_location.lng) }}" class="text-xs text-primary font-medium">Clear All</a>
+            </div>
+            <div class="flex flex-wrap gap-2" id="appliedFiltersContainer">
+                {% for type in active_filters.types %}
+                <div class="filter-tag px-3 py-1.5 rounded-full border text-sm bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-2">
+                    <span>{{ type }}</span>
+                    <!-- Remove filter by rebuilding URL without this type -->
+                    <a href="{{ url_for('car.car_list', **dict(request.args, user_lat=user_location.lat, user_lng=user_location.lng, type=active_filters.types|reject('equalto', type)|list)) }}" class="remove cursor-pointer">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+                {% endfor %}
+                {% for trans in active_filters.transmissions %}
+                <div class="filter-tag px-3 py-1.5 rounded-full border text-sm bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-2">
+                    <span>{{ trans }}</span>
+                    <a href="{{ url_for('car.car_list', **dict(request.args, user_lat=user_location.lat, user_lng=user_location.lng, transmission=active_filters.transmissions|reject('equalto', trans)|list)) }}" class="remove cursor-pointer">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+                {% endfor %}
+                {% for fuel in active_filters.fuels %}
+                <div class="filter-tag px-3 py-1.5 rounded-full border text-sm bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-2">
+                    <span>{{ fuel }}</span>
+                    <a href="{{ url_for('car.car_list', **dict(request.args, user_lat=user_location.lat, user_lng=user_location.lng, fuel=active_filters.fuels|reject('equalto', fuel)|list)) }}" class="remove cursor-pointer">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+                {% endfor %}
+                {% for brand in active_filters.brands %}
+                <div class="filter-tag px-3 py-1.5 rounded-full border text-sm bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-2">
+                    <span>{{ brand }}</span>
+                    <a href="{{ url_for('car.car_list', **dict(request.args, user_lat=user_location.lat, user_lng=user_location.lng, brand=active_filters.brands|reject('equalto', brand)|list)) }}" class="remove cursor-pointer">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+                {% endfor %}
+                {% for feature in active_filters.features %}
+                <div class="filter-tag px-3 py-1.5 rounded-full border text-sm bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-2">
+                    <span>{{ feature }}</span>
+                    <a href="{{ url_for('car.car_list', **dict(request.args, user_lat=user_location.lat, user_lng=user_location.lng, features=active_filters.features|reject('equalto', feature)|list)) }}" class="remove cursor-pointer">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+                {% endfor %}
+                {% if active_filters.min_seats %}
+                <div class="filter-tag px-3 py-1.5 rounded-full border text-sm bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-2">
+                    <span>Min Seats: {{ active_filters.min_seats }}</span>
+                    <a href="{{ url_for('car.car_list', **dict(request.args, user_lat=user_location.lat, user_lng=user_location.lng, min_seats='')) }}" class="remove cursor-pointer">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+                {% endif %}
+                {% if active_filters.max_seats %}
+                <div class="filter-tag px-3 py-1.5 rounded-full border text-sm bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-2">
+                    <span>Max Seats: {{ active_filters.max_seats }}</span>
+                    <a href="{{ url_for('car.car_list', **dict(request.args, user_lat=user_location.lat, user_lng=user_location.lng, max_seats='')) }}" class="remove cursor-pointer">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+                {% endif %}
+                {% if active_filters.min_price %}
+                <div class="filter-tag px-3 py-1.5 rounded-full border text-sm bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-2">
+                    <span>Min Price: ₹{{ active_filters.min_price }}</span>
+                    <a href="{{ url_for('car.car_list', **dict(request.args, user_lat=user_location.lat, user_lng=user_location.lng, min_price='')) }}" class="remove cursor-pointer">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+                {% endif %}
+                {% if active_filters.max_price %}
+                <div class="filter-tag px-3 py-1.5 rounded-full border text-sm bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-2">
+                    <span>Max Price: ₹{{ active_filters.max_price }}</span>
+                    <a href="{{ url_for('car.car_list', **dict(request.args, user_lat=user_location.lat, user_lng=user_location.lng, max_price='')) }}" class="remove cursor-pointer">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+                {% endif %}
+                {% if active_filters.min_year %}
+                <div class="filter-tag px-3 py-1.5 rounded-full border text-sm bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-2">
+                    <span>Min Year: {{ active_filters.min_year }}+</span>
+                    <a href="{{ url_for('car.car_list', **dict(request.args, user_lat=user_location.lat, user_lng=user_location.lng, min_year='')) }}" class="remove cursor-pointer">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        <!-- End Applied Filters Tags -->
+
+        <!-- Car Listings Grid -->
+        <div class="car-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% if cars %}
+                {% for car in cars %}
+                <div class="car-card bg-white border rounded-2xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md">
+                    <!-- Car Image -->
+                    <div class="relative h-48 w-full overflow-hidden">
+                        {% if car.images and car.images[0] %}
+                            <img src="{{ url_for('static', filename='uploads/' + car.images[0].filename) }}"
+                                 alt="{{ car.make }} {{ car.model }}"
+                                 class="w-full h-full object-cover car-image transition-transform duration-500">
+                        {% else %}
+                            <div class="bg-gray-200 border-2 border-dashed rounded-xl w-full h-full flex items-center justify-center">
+                                <i class="fas fa-car text-gray-400 text-4xl"></i>
+                            </div>
+                        {% endif %}
+                        {% if loop.index == 1 %}
+                        <div class="absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800 border border-yellow-300">
+                            Top Pick
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="p-4">
+                        <!-- Car Title & Details -->
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <div>
+                                <h3 class="font-bold text-gray-800 leading-tight">{{ car.make }} {{ car.model }} ({{ car.year }})</h3>
+                                <p class="text-xs text-gray-500 mt-1">{{ car.transmission }} • {{ car.fuel_type }} • {{ car.seats }} seats</p>
+                            </div>
+                            <!-- Rating (Placeholder) -->
+                            <div class="flex items-center gap-1 text-sm">
+                                <i class="fas fa-star text-yellow-400"></i>
+                                <span class="font-semibold">4.5</span>
+                                <!-- <span class="text-gray-500">(128)</span> -->
+                            </div>
+                        </div>
+
+                        <!-- Location & Pricing -->
+                        <div class="flex items-center justify-between text-sm mb-3">
+                            <div class="text-gray-600">
+                                <i class="fas fa-map-marker-alt text-primary mr-1"></i>
+                                {% if car.locality %}{{ car.locality }}, {% endif %}
+                                {{ car.city }}
+                            </div>
+                            <div class="text-right">
+                                <div class="text-lg font-bold text-gray-900">₹{{ "%.0f"|format(car.price_per_day) }}</div>
+                                <div class="text-xs text-gray-500">/ day</div>
+                                {% if car.display_distance_km is defined %}
+                                <div class="text-xs text-gray-500">{{ car.display_distance_km }} km away</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex items-center gap-2">
+                            <a href="{{ url_for('car.car_detail', car_id=car.id) }}" class="flex-1 text-center text-sm font-medium bg-primary text-white rounded-xl px-3 py-2 transition-all hover:bg-blue-600">
+                                <i class="fas fa-info-circle"></i> View Details
+                            </a>
+                            <button class="text-sm px-3 py-2 rounded-xl border text-gray-700 hover:bg-gray-50">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-span-full text-center py-10">
+                    <i class="fas fa-car fa-3x text-gray-300 mb-3"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">No cars found</h3>
+                    <p class="text-gray-500 mb-4">Try adjusting your filters or search criteria.</p>
+                    <a href="{{ url_for('car.home') }}" class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-search mr-2"></i> Search Again
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Pagination (Placeholder) -->
+        <!--
+        <div class="pagination flex justify-center mt-6 gap-2">
+            <button class="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-100">1</button>
+            <button class="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-100">2</button>
+            <button class="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-100">3</button>
+            <button class="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-100"><i class="fas fa-chevron-right"></i></button>
+        </div>
+        -->
+    </section>
+</div>
+
+<!-- Mobile Filters Drawer -->
+<div id="mobileFilterDrawer" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/40" id="drawerBackdrop"></div>
+    <div class="filter-drawer absolute right-0 top-0 h-full w-full max-w-md bg-white p-4 overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-lg">Filters</h3>
+            <button id="closeFilterDrawer" class="p-2 rounded-lg hover:bg-gray-100">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="mobileFiltersContent">
+             <!-- Include the same sidebar content here for mobile -->
+             <!-- You can copy the filter form content from the aside block above -->
+             <p class="text-gray-500">Mobile filter content would go here.</p>
+        </div>
+        <div class="pt-4 flex items-center gap-2 border-t border-gray-200 mt-4">
+            <button id="applyMobileFilters" class="flex-1 bg-primary text-white rounded-xl px-4 py-2 font-medium">
+                Apply Filters
+            </button>
+            <button id="resetMobileFilters" class="px-4 py-2 rounded-xl border text-gray-700 hover:bg-gray-100">
+                Reset
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --- Price Slider Logic ---
+    const priceSlider = document.querySelector('input[name="max_price_slider"]');
+    const priceValue = document.getElementById('priceValue');
+    const maxPriceInput = document.getElementById('maxPriceInput');
+    // const minPriceInput = document.getElementById('minPriceInput'); // If using min slider
+
+    if (priceSlider) {
+        // Set initial value display
+        priceValue.textContent = `Up to ₹${priceSlider.value}`;
+        maxPriceInput.value = priceSlider.value;
+
+        priceSlider.addEventListener('input', function() {
+            priceValue.textContent = `Up to ₹${this.value}`;
+            maxPriceInput.value = this.value;
+            // For a true range, you'd also update minPriceInput based on another slider
+        });
+    }
+    // --- End Price Slider ---
+
+    // --- Mobile Filter Drawer Logic ---
+    const mobileFilterToggle = document.getElementById('mobileFilterToggle');
+    const mobileFilterDrawer = document.getElementById('mobileFilterDrawer');
+    const closeFilterDrawer = document.getElementById('closeFilterDrawer');
+    const drawerBackdrop = document.getElementById('drawerBackdrop');
+    const applyMobileFiltersBtn = document.getElementById('applyMobileFilters');
+    const resetMobileFiltersBtn = document.getElementById('resetMobileFilters');
+
+    function openDrawer() {
+        mobileFilterDrawer.classList.remove('hidden');
+    }
+
+    function closeDrawer() {
+        mobileFilterDrawer.classList.add('hidden');
+    }
+
+    if (mobileFilterToggle) mobileFilterToggle.addEventListener('click', openDrawer);
+    if (closeFilterDrawer) closeFilterDrawer.addEventListener('click', closeDrawer);
+    if (drawerBackdrop) drawerBackdrop.addEventListener('click', closeDrawer);
+
+    // Placeholder for Apply/Reset logic (would need form handling)
+    if (applyMobileFiltersBtn) applyMobileFiltersBtn.addEventListener('click', function() {
+         alert('Apply filters logic would go here (collect form data and submit or reload page)');
+         // Example: Collect data, build URL, window.location.href = newUrl;
+         closeDrawer();
+    });
+    if (resetMobileFiltersBtn) resetMobileFiltersBtn.addEventListener('click', function() {
+         alert('Reset filters logic would go here (clear form inputs)');
+         // Example: Reset all filter inputs to default/empty
+    });
+    // --- End Mobile Filter Drawer Logic ---
+
+    // --- Simple Sort Dropdown Toggle (Basic Tailwind, no complex JS) ---
+    const sortDropdownButton = document.querySelector('.sort-dropdown button');
+    const sortDropdownContent = document.querySelector('.sort-dropdown-content');
+
+    if (sortDropdownButton && sortDropdownContent) {
+        sortDropdownButton.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent event bubbling
+            sortDropdownContent.classList.toggle('hidden');
+        });
+
+        // Close dropdown if clicked outside
+        document.addEventListener('click', function(e) {
+            if (!sortDropdownButton.contains(e.target) && !sortDropdownContent.contains(e.target)) {
+                sortDropdownContent.classList.add('hidden');
+            }
+        });
+    }
+    // --- End Sort Dropdown ---
+});
+</script>
+{% endblock %}
